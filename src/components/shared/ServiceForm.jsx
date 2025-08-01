@@ -402,9 +402,8 @@ if (formData.serviceType === 'complet-premium') {
         priceAdjustment: parseFloat(formData.priceAdjustment) || 0,
         date: formData.date || getCurrentDateString(),
         createdAt: existingService?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        completed: existingService?.completed || false
-        
+        completed: existingService?.completed || false,  // ✅ ADD COMMA HERE!
+        motoDetails: null  // ✅ NOW THIS WORKS!
       };
       
       // Simulate async operation
