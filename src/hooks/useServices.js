@@ -1,9 +1,17 @@
+// hooks/useServices.js - REPLACE YOUR ENTIRE FILE WITH THIS
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import config from '../config.local';
 import { SERVICE_TYPES } from '../utils/configs';
+import { 
+  transformBackendResponse, 
+  safeFilterServices,
+  validateServiceBeforeSend,
+  safeNumber,
+  calculateSafeRevenue
+} from '../utils/dataSafetyUtils'; // ✅ Import the safety utils
 
 export const useServices = (addNotification) => {
-  // ✅ CHANGED - Use React state instead of localStorage
+  // ✅ FIXED - Use React state with better initialization
   const [services, setServices] = useState([]);
   const [serviceConfig, setServiceConfig] = useState(SERVICE_TYPES);
   const [showServiceForm, setShowServiceForm] = useState(false);
@@ -18,11 +26,17 @@ export const useServices = (addNotification) => {
   const [filterBrand, setFilterBrand] = useState('all');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
-  // ✅ NEW - Fetch services from backend on component mount
+  // ✅ FIXED - Improved fetch with better error handling and data transformation
   const fetchServices = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('auth_token');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      console.log('🔄 Fetching services from:', config.API_ENDPOINTS.WASHES);
       
       const response = await fetch(config.API_ENDPOINTS.WASHES, {
         headers: {
@@ -32,30 +46,33 @@ export const useServices = (addNotification) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch services');
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const backendServices = await response.json();
+      console.log('📥 Raw backend data:', backendServices);
       
-      // Convert backend format to frontend format
-      const frontendServices = backendServices.map(service => ({
-        id: service.id,
-        licensePlate: service.immatriculation,
-        serviceType: service.service_type,
-        vehicleType: service.vehicle_type,
-        totalPrice: service.price,
-        photos: service.photos || [],
-        motoDetails: service.moto_details,
-        date: service.created_at?.split('T')[0], // Convert to date string
-        createdAt: service.created_at,
-        updatedAt: service.updated_at,
-        completed: service.status === 'completed'
-      }));
+      // ✅ USE THE SAFE TRANSFORMER
+      const transformedServices = transformBackendResponse(backendServices);
+      console.log('✅ Transformed services:', transformedServices);
+      
+      setServices(transformedServices);
+      
+      // Log summary for debugging
+      const revenue = calculateSafeRevenue(transformedServices);
+      console.log('💰 Revenue summary:', revenue);
+      
+      if (transformedServices.length > 0) {
+        addNotification('✅ Données Synchronisées', `${transformedServices.length} services chargés`, 'success');
+      }
 
-      setServices(frontendServices);
     } catch (error) {
-      console.error('Error fetching services:', error);
-      addNotification('Erreur', 'Impossible de charger les services', 'error');
+      console.error('❌ Error fetching services:', error);
+      addNotification('❌ Erreur de Synchronisation', error.message, 'error');
+      
+      // Set empty array on error instead of keeping stale data
+      setServices([]);
     } finally {
       setLoading(false);
     }
@@ -66,54 +83,75 @@ export const useServices = (addNotification) => {
     fetchServices();
   }, [fetchServices]);
 
-  // Enhanced filtered services with error handling
+  // ✅ FIXED - Safe filtered services with better error handling
   const filteredServices = useMemo(() => {
     try {
-      if (!Array.isArray(services)) return [];
+      const safeServices = safeFilterServices(services);
+      
+      if (safeServices.length === 0) return [];
 
-      return services.filter(service => {
-        if (!service || typeof service !== 'object') return false;
-
-        const matchesSearch = !searchTerm || 
-          (service.licensePlate && service.licensePlate.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (service.phone && service.phone.includes(searchTerm)) ||
-          (service.vehicleBrand && service.vehicleBrand.toLowerCase().includes(searchTerm.toLowerCase()));
-        
-        const matchesVehicleType = filterVehicleType === 'all' || service.vehicleType === filterVehicleType;
-        const matchesStaff = filterStaff === 'all' || (Array.isArray(service.staff) && service.staff.includes(filterStaff));
-        const matchesServiceType = filterServiceType === 'all' || service.serviceType === filterServiceType;
-        const matchesBrand = filterBrand === 'all' || service.vehicleBrand === filterBrand;
-        
-        let matchesDateRange = true;
-        if (service.date) {
-          const serviceDate = new Date(service.date);
-          if (!isNaN(serviceDate)) {
-            matchesDateRange = (!dateRange.start || serviceDate >= new Date(dateRange.start)) &&
-                              (!dateRange.end || serviceDate <= new Date(dateRange.end));
+      return safeServices.filter(service => {
+        try {
+          // Search filter
+          const matchesSearch = !searchTerm || 
+            (service.licensePlate && service.licensePlate.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (service.phone && service.phone.includes(searchTerm)) ||
+            (service.vehicleBrand && service.vehicleBrand.toLowerCase().includes(searchTerm.toLowerCase()));
+          
+          // Type filters
+          const matchesVehicleType = filterVehicleType === 'all' || service.vehicleType === filterVehicleType;
+          const matchesStaff = filterStaff === 'all' || (Array.isArray(service.staff) && service.staff.includes(filterStaff));
+          const matchesServiceType = filterServiceType === 'all' || service.serviceType === filterServiceType;
+          const matchesBrand = filterBrand === 'all' || service.vehicleBrand === filterBrand;
+          
+          // Date filter
+          let matchesDateRange = true;
+          if (service.date && (dateRange.start || dateRange.end)) {
+            const serviceDate = new Date(service.date);
+            if (!isNaN(serviceDate)) {
+              matchesDateRange = (!dateRange.start || serviceDate >= new Date(dateRange.start)) &&
+                                (!dateRange.end || serviceDate <= new Date(dateRange.end));
+            }
           }
+          
+          return matchesSearch && matchesVehicleType && matchesStaff && 
+                 matchesServiceType && matchesBrand && matchesDateRange;
+        } catch (filterError) {
+          console.warn('Service filter error:', filterError);
+          return false;
         }
-        
-        return matchesSearch && matchesVehicleType && matchesStaff && 
-               matchesServiceType && matchesBrand && matchesDateRange;
       });
     } catch (error) {
-      console.error('Error filtering services:', error);
+      console.error('❌ Error filtering services:', error);
       return [];
     }
   }, [services, searchTerm, filterVehicleType, filterStaff, filterServiceType, filterBrand, dateRange]);
 
-  // ✅ FIXED - Backend API CRUD Operations
+  // ✅ FIXED - Safe service creation with validation
   const handleCreateService = useCallback(async (serviceData) => {
     console.log('🚀 Creating service via API...', serviceData);
+    
     try {
-      if (!serviceData || typeof serviceData !== 'object') {
-        throw new Error('Invalid service data');
+      // ✅ VALIDATE BEFORE SENDING
+      const validation = validateServiceBeforeSend(serviceData);
+      
+      if (!validation.isValid) {
+        throw new Error(`Données invalides: ${validation.errors.join(', ')}`);
       }
 
       const token = localStorage.getItem('auth_token');
       
+      if (!token) {
+        throw new Error('Token d\'authentification manquant');
+      }
+      
+      // ✅ USE SAFE DATA
+      const safeData = validation.safeData;
+      
       if (editingService) {
         // UPDATE existing service
+        console.log('📝 Updating service:', editingService.id);
+        
         const response = await fetch(`${config.API_ENDPOINTS.WASHES}/${editingService.id}`, {
           method: 'PUT',
           headers: {
@@ -121,36 +159,35 @@ export const useServices = (addNotification) => {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            immatriculation: serviceData.licensePlate,
-            serviceType: serviceData.serviceType,
-            vehicleType: serviceData.vehicleType,
-            price: serviceData.totalPrice,
-            photos: serviceData.photos,
-            motoDetails: serviceData.motoDetails || null
+            immatriculation: safeData.licensePlate,
+            serviceType: safeData.serviceType,
+            vehicleType: safeData.vehicleType,
+            price: safeData.totalPrice,
+            price_adjustment: safeData.priceAdjustment,
+            photos: safeData.photos,
+            motoDetails: safeData.motoDetails,
+            vehicle_brand: safeData.vehicleBrand,
+            vehicle_model: safeData.vehicleModel,
+            vehicle_color: safeData.vehicleColor,
+            staff: safeData.staff,
+            phone: safeData.phone,
+            notes: safeData.notes
           })
         });
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Failed to update service');
+          throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
         }
 
-        const updatedService = await response.json();
-        
-        // Convert backend response to frontend format
-        const frontendService = {
-          ...serviceData,
-          id: updatedService.id,
-          createdAt: updatedService.created_at,
-          updatedAt: updatedService.updated_at
-        };
-
-        // Update local state
-        setServices(prev => prev.map(s => s.id === editingService.id ? frontendService : s));
-        addNotification('Service Modifié', `Service ${serviceData.licensePlate} mis à jour`, 'success');
+        // ✅ REFRESH FROM SERVER instead of local update
+        await fetchServices();
+        addNotification('✅ Service Modifié', `Service ${safeData.licensePlate} mis à jour`, 'success');
         
       } else {
         // CREATE new service
+        console.log('➕ Creating new service');
+        
         const response = await fetch(config.API_ENDPOINTS.WASHES, {
           method: 'POST',
           headers: {
@@ -158,90 +195,98 @@ export const useServices = (addNotification) => {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            immatriculation: serviceData.licensePlate,
-            serviceType: serviceData.serviceType,
-            vehicleType: serviceData.vehicleType,
-            price: serviceData.totalPrice,
-            photos: serviceData.photos,
-            motoDetails: serviceData.motoDetails || null
+            immatriculation: safeData.licensePlate,
+            serviceType: safeData.serviceType,
+            vehicleType: safeData.vehicleType,
+            price: safeData.totalPrice,
+            price_adjustment: safeData.priceAdjustment,
+            photos: safeData.photos,
+            motoDetails: safeData.motoDetails,
+            vehicle_brand: safeData.vehicleBrand,
+            vehicle_model: safeData.vehicleModel,
+            vehicle_color: safeData.vehicleColor,
+            staff: safeData.staff,
+            phone: safeData.phone,
+            notes: safeData.notes
           })
         });
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Failed to create service');
+          throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
         }
 
-        const savedService = await response.json();
-        
-        // Convert backend response to frontend format
-        const frontendService = {
-          ...serviceData,
-          id: savedService.id,
-          createdAt: savedService.created_at,
-          updatedAt: savedService.updated_at
-        };
-
-        // Add to local state
-        setServices(prev => [...prev, frontendService]);
-        addNotification('Service Créé', `Nouveau service ${serviceData.licensePlate}`, 'success');
+        // ✅ REFRESH FROM SERVER to ensure sync
+        await fetchServices();
+        addNotification('✅ Service Créé', `Nouveau service ${safeData.licensePlate}`, 'success');
       }
       
       setShowServiceForm(false);
       setEditingService(null);
       
     } catch (error) {
-      console.error('Error creating/updating service:', error);
-      addNotification('Erreur', error.message || 'Impossible de sauvegarder le service', 'error');
+      console.error('❌ Error creating/updating service:', error);
+      addNotification('❌ Erreur', error.message || 'Impossible de sauvegarder le service', 'error');
     }
-  }, [editingService, addNotification]);
+  }, [editingService, addNotification, fetchServices]);
 
+  // ✅ FIXED - Safe edit service
   const handleEditService = useCallback((service) => {
     try {
       if (!service || !service.id) {
-        throw new Error('Invalid service for editing');
+        throw new Error('Service invalide pour modification');
       }
-      setEditingService(service);
+      
+      // ✅ ENSURE WE HAVE SAFE DATA
+      const safeService = safeFilterServices([service])[0];
+      if (!safeService) {
+        throw new Error('Impossible de préparer le service pour modification');
+      }
+      
+      setEditingService(safeService);
       setShowServiceForm(true);
     } catch (error) {
-      console.error('Error editing service:', error);
-      addNotification('Erreur', 'Impossible de modifier le service', 'error');
+      console.error('❌ Error editing service:', error);
+      addNotification('❌ Erreur', error.message, 'error');
     }
   }, [addNotification]);
 
-  // ✅ FIXED - Delete via backend API
+  // ✅ FIXED - Safe delete with refresh
   const handleDeleteService = useCallback(async (serviceId) => {
     try {
       if (!serviceId) {
-        throw new Error('Invalid service ID');
+        throw new Error('ID de service invalide');
       }
 
-      if (window.confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) {
-        const token = localStorage.getItem('auth_token');
-        
-        const response = await fetch(`${config.API_ENDPOINTS.WASHES}/${serviceId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+      if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) {
+        return;
+      }
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Failed to delete service');
+      const token = localStorage.getItem('auth_token');
+      
+      const response = await fetch(`${config.API_ENDPOINTS.WASHES}/${serviceId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
+      });
 
-        // Remove from local state
-        setServices(prev => prev.filter(s => s.id !== serviceId));
-        addNotification('Service Supprimé', 'Service supprimé avec succès', 'success');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
       }
-    } catch (error) {
-      console.error('Error deleting service:', error);
-      addNotification('Erreur', error.message || 'Impossible de supprimer le service', 'error');
-    }
-  }, [addNotification]);
 
-  // ✅ FIXED - Complete service via backend API
+      // ✅ REFRESH FROM SERVER
+      await fetchServices();
+      addNotification('✅ Service Supprimé', 'Service supprimé avec succès', 'success');
+      
+    } catch (error) {
+      console.error('❌ Error deleting service:', error);
+      addNotification('❌ Erreur', error.message, 'error');
+    }
+  }, [addNotification, fetchServices]);
+
+  // ✅ FIXED - Safe complete service
   const handleCompleteService = useCallback(async (serviceId) => {
     try {
       const token = localStorage.getItem('auth_token');
@@ -256,20 +301,72 @@ export const useServices = (addNotification) => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to complete service');
+        throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
       }
 
-      // Update local state
-      setServices(prev => prev.map(s => 
-        s.id === serviceId ? { ...s, completed: true } : s
-      ));
+      // ✅ REFRESH FROM SERVER
+      await fetchServices();
+      addNotification('✅ Service Terminé', 'Service marqué comme terminé', 'success');
       
-      addNotification('Service Terminé', 'Service marqué comme terminé', 'success');
     } catch (error) {
-      console.error('Error completing service:', error);
-      addNotification('Erreur', error.message || 'Impossible de terminer le service', 'error');
+      console.error('❌ Error completing service:', error);
+      addNotification('❌ Erreur', error.message, 'error');
     }
-  }, [addNotification]);
+  }, [addNotification, fetchServices]);
+
+  // ✅ SAFE EXPORT WITH PROPER DATA
+  const exportToCSV = useCallback(() => {
+    try {
+      const safeServices = safeFilterServices(filteredServices);
+      
+      if (safeServices.length === 0) {
+        addNotification('⚠️ Aucune Donnée', 'Aucun service à exporter', 'warning');
+        return;
+      }
+
+      const headers = [
+        'Date', 'Plaque', 'Type Service', 'Type Véhicule', 'Marque', 
+        'Prix Total', 'Ajustement Prix', 'Staff', 'Téléphone', 'Notes', 'Statut'
+      ];
+      
+      const csvData = safeServices.map(service => [
+        service.date || '',
+        service.licensePlate || '',
+        service.serviceType || '',
+        service.vehicleType || '',
+        service.vehicleBrand || '',
+        safeNumber(service.totalPrice, 0),
+        safeNumber(service.priceAdjustment, 0),
+        Array.isArray(service.staff) ? service.staff.join(', ') : service.staff || '',
+        service.phone || '',
+        service.notes || '',
+        service.completed ? 'Terminé' : 'En cours'
+      ]);
+
+      const csvContent = [headers, ...csvData]
+        .map(row => row.map(cell => `"${cell}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `services_export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      addNotification('✅ Export Réussi', `${safeServices.length} services exportés`, 'success');
+      
+    } catch (error) {
+      console.error('❌ Export error:', error);
+      addNotification('❌ Erreur Export', error.message, 'error');
+    }
+  }, [filteredServices, addNotification]);
 
   // Filter functions
   const clearFilters = useCallback(() => {
@@ -282,8 +379,8 @@ export const useServices = (addNotification) => {
   }, []);
 
   return {
-    // Data
-    services: filteredServices,
+    // Data - ALWAYS SAFE
+    services: safeFilterServices(filteredServices),
     serviceConfig,
     loading,
     
@@ -305,6 +402,7 @@ export const useServices = (addNotification) => {
     handleDeleteService,
     handleCompleteService,
     fetchServices,
+    exportToCSV,
     
     // Form controls
     setShowServiceForm,
@@ -319,4 +417,4 @@ export const useServices = (addNotification) => {
     setDateRange,
     clearFilters
   };
-};
+}; 
