@@ -403,7 +403,7 @@ if (formData.serviceType === 'complet-premium') {
   createdAt: existingService?.createdAt || new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   completed: existingService?.completed || false,  // ✅ ADD COMMA HERE!
-  motoDetails: null  // ✅ NOW THIS WORKS!
+  motoDetails: {}// ✅ NOW THIS WORKS!
 };
       // Simulate async operation
       // Get authentication token
