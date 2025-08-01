@@ -126,7 +126,7 @@ export const useServices = (addNotification) => {
             vehicleType: serviceData.vehicleType,
             price: serviceData.totalPrice,
             photos: serviceData.photos,
-            motoDetails: serviceData.motoDetails
+            motoDetails: serviceData.motoDetails || null
           })
         });
 
@@ -163,7 +163,7 @@ export const useServices = (addNotification) => {
             vehicleType: serviceData.vehicleType,
             price: serviceData.totalPrice,
             photos: serviceData.photos,
-            motoDetails: serviceData.motoDetails
+            motoDetails: serviceData.motoDetails || null
           })
         });
 
@@ -319,4 +319,4 @@ export const useServices = (addNotification) => {
     setDateRange,
     clearFilters
   };
-}; 
+};
