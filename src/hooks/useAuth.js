@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { sanitizeInput } from '../utils/validation';
+import config from '../config.local.js'; 
 
 export const useAuth = (addNotification) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -36,7 +37,7 @@ export const useAuth = (addNotification) => {
       const token = localStorage.getItem('auth_token');
       if (token) {
         try {
-          const response = await fetch('/api/auth/verify', {
+          const response = await fetch(config.API_ENDPOINTS.VERIFY, { 
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -95,7 +96,7 @@ export const useAuth = (addNotification) => {
       const password = sanitizeInput(authForm.password, 50);
 
       // Call backend API for authentication
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(config.API_ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
