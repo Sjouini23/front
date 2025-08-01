@@ -174,7 +174,7 @@ if (formData.serviceType === 'complet-premium') {
       service = { basePrice: hardcodedPrices[formData.serviceType] || 0 };
     }
     
-    const basePrice = service.basePrice || service.price || 0;
+    const basePrice = (service?.basePrice ?? service?.price ?? 0);
     const adjustment = parseFloat(formData.priceAdjustment) || 0;
     const total = Math.max(0, basePrice + adjustment);
     
