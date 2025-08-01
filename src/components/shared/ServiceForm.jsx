@@ -19,7 +19,6 @@ import { sanitizeInput, validateLicensePlate, validatePhone, isValidDate, safePa
 import { getCurrentDateString } from '../../utils/dateUtils';
 import config from '../../config.local';
 
-
 // ENHANCED VEHICLE_TYPES with TAXI
 const ENHANCED_VEHICLE_TYPES = {
   ...VEHICLE_TYPES,
@@ -311,13 +310,13 @@ if (formData.serviceType === 'complet-premium') {
       const token = localStorage.getItem('auth_token');
       
       // Upload to Cloudinary via your API
-      const response = await fetch(`${API_BASE_URL}/upload`, {
-        method: 'POST',
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: formDataToUpload
-      });
+      const response = await fetch(config.API_ENDPOINTS.UPLOAD, {
+  method: 'POST',
+  headers: {
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  },
+  body: formDataToUpload
+});
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -390,39 +389,28 @@ if (formData.serviceType === 'complet-premium') {
       const timerData = !existingService ? initializeTimer() : {};
       
       // Sanitize form data
-      const sanitizedData = {
-        ...formData,
-        ...timerData,
-        id: existingService?.id || `service_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        licensePlate: sanitizeInput(formData.licensePlate.toUpperCase(), 20),
-        vehicleModel: sanitizeInput(formData.vehicleModel, 50),
-        phone: sanitizeInput(formData.phone, 20),
-        notes: sanitizeInput(formData.notes, 1000),
-        totalPrice: calculatePrice(),
-        priceAdjustment: parseFloat(formData.priceAdjustment) || 0,
-        date: formData.date || getCurrentDateString(),
-        createdAt: existingService?.createdAt || new Date().toISOString(),
-        completed: existingService?.completed || false,  // ✅ ADD COMMA HERE!
-        motoDetails: null  // ✅ NOW THIS WORKS!
-      };
-      
+     const sanitizedData = {
+  ...formData,
+  ...timerData,
+  id: existingService?.id || `service_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+  licensePlate: sanitizeInput(formData.licensePlate.toUpperCase(), 20),
+  vehicleModel: sanitizeInput(formData.vehicleModel, 50),
+  phone: sanitizeInput(formData.phone, 20),
+  notes: sanitizeInput(formData.notes, 1000),
+  totalPrice: calculatePrice(),
+  priceAdjustment: parseFloat(formData.priceAdjustment) || 0,
+  date: formData.date || getCurrentDateString(),
+  createdAt: existingService?.createdAt || new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  completed: existingService?.completed || false,  // ✅ ADD COMMA HERE!
+  motoDetails: null  // ✅ NOW THIS WORKS!
+};
       // Simulate async operation
       // Get authentication token
-
-
-// Create service via backend API
 onSubmit(sanitizedData);
 
-// Convert backend response to frontend format
-const frontendService = {
-  ...sanitizedData,
-  id: savedService.id,
-  createdAt: savedService.created_at,
-  updatedAt: savedService.updated_at
-};
 
-onSubmit(frontendService);
-      
+
       addNotification(
         'Succès',
         `${existingService ? 'Service modifié' : 'Service créé et timer démarré'} : ${formData.licensePlate}`,
