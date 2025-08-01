@@ -1,23 +1,16 @@
-// config.local.js - Frontend API Configuration
-// This should match your backend server port (default: 3001)
+// config.local.js - Environment-aware API configuration
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
+                     process.env.REACT_APP_API_URL || 
+                     "http://localhost:3001";
 
-const API_BASE_URL = "http://localhost:3001/api";
-
-export default API_BASE_URL;
-
-// Alternative configuration for different environments:
-/*
 const config = {
-  development: {
-    API_BASE_URL: "http://localhost:3001/api",
-    UPLOAD_URL: "http://localhost:3001/uploads"
-  },
-  production: {
-    API_BASE_URL: "https://your-domain.com/api",
-    UPLOAD_URL: "https://your-domain.com/uploads"
+  API_BASE_URL: API_BASE_URL,
+  API_ENDPOINTS: {
+    LOGIN: `${API_BASE_URL}/api/auth/login`,
+    VERIFY: `${API_BASE_URL}/api/auth/verify`,
+    WASHES: `${API_BASE_URL}/api/washes`,
+    HEALTH: `${API_BASE_URL}/api/health`
   }
 };
 
-const environment = process.env.NODE_ENV || 'development';
-export default config[environment];
-*/
+export default config;
