@@ -408,31 +408,10 @@ if (formData.serviceType === 'complet-premium') {
       
       // Simulate async operation
       // Get authentication token
-const token = localStorage.getItem('auth_token');
+
 
 // Create service via backend API
-const response = await fetch(config.API_ENDPOINTS.WASHES, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`
-  },
-  body: JSON.stringify({
-    immatriculation: sanitizedData.licensePlate,
-    serviceType: sanitizedData.serviceType,
-    vehicleType: sanitizedData.vehicleType,
-    price: sanitizedData.totalPrice,
-    photos: sanitizedData.photos,
-    motoDetails: sanitizedData.motoDetails
-  })
-});
-
-if (!response.ok) {
-  const errorData = await response.json().catch(() => ({}));
-  throw new Error(errorData.error || 'Failed to save service');
-}
-
-const savedService = await response.json();
+onSubmit(sanitizedData);
 
 // Convert backend response to frontend format
 const frontendService = {

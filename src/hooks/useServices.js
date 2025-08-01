@@ -1,13 +1,14 @@
-import { useState, useCallback, useMemo } from 'react';
-import { useSecureLocalStorage } from './useSecureLocalStorages';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import config from '../config.local';
 import { SERVICE_TYPES } from '../utils/configs';
 
 export const useServices = (addNotification) => {
-  // Data State
-  const [services, setServices] = useSecureLocalStorage('jouini_luxury_services_2025', []);
-  const [serviceConfig, setServiceConfig] = useSecureLocalStorage('jouini_luxury_config_2025', SERVICE_TYPES);
+  // ✅ CHANGED - Use React state instead of localStorage
+  const [services, setServices] = useState([]);
+  const [serviceConfig, setServiceConfig] = useState(SERVICE_TYPES);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [editingService, setEditingService] = useState(null);
+  const [loading, setLoading] = useState(false);
   
   // Filter State
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,6 +17,54 @@ export const useServices = (addNotification) => {
   const [filterServiceType, setFilterServiceType] = useState('all');
   const [filterBrand, setFilterBrand] = useState('all');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
+
+  // ✅ NEW - Fetch services from backend on component mount
+  const fetchServices = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('auth_token');
+      
+      const response = await fetch(config.API_ENDPOINTS.WASHES, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch services');
+      }
+
+      const backendServices = await response.json();
+      
+      // Convert backend format to frontend format
+      const frontendServices = backendServices.map(service => ({
+        id: service.id,
+        licensePlate: service.immatriculation,
+        serviceType: service.service_type,
+        vehicleType: service.vehicle_type,
+        totalPrice: service.price,
+        photos: service.photos || [],
+        motoDetails: service.moto_details,
+        date: service.created_at?.split('T')[0], // Convert to date string
+        createdAt: service.created_at,
+        updatedAt: service.updated_at,
+        completed: service.status === 'completed'
+      }));
+
+      setServices(frontendServices);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      addNotification('Erreur', 'Impossible de charger les services', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [addNotification]);
+
+  // Load services on component mount
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
   // Enhanced filtered services with error handling
   const filteredServices = useMemo(() => {
@@ -53,30 +102,99 @@ export const useServices = (addNotification) => {
     }
   }, [services, searchTerm, filterVehicleType, filterStaff, filterServiceType, filterBrand, dateRange]);
 
-  // CRUD Operations with enhanced error handling
-  const handleCreateService = useCallback((serviceData) => {
-    console.log('🔄 Creating service...', serviceData);
+  // ✅ FIXED - Backend API CRUD Operations
+  const handleCreateService = useCallback(async (serviceData) => {
+    console.log('🚀 Creating service via API...', serviceData);
     try {
       if (!serviceData || typeof serviceData !== 'object') {
         throw new Error('Invalid service data');
       }
 
+      const token = localStorage.getItem('auth_token');
+      
       if (editingService) {
-        setServices(prev => prev.map(s => s.id === editingService.id ? serviceData : s));
+        // UPDATE existing service
+        const response = await fetch(`${config.API_ENDPOINTS.WASHES}/${editingService.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            immatriculation: serviceData.licensePlate,
+            serviceType: serviceData.serviceType,
+            vehicleType: serviceData.vehicleType,
+            price: serviceData.totalPrice,
+            photos: serviceData.photos,
+            motoDetails: serviceData.motoDetails
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to update service');
+        }
+
+        const updatedService = await response.json();
+        
+        // Convert backend response to frontend format
+        const frontendService = {
+          ...serviceData,
+          id: updatedService.id,
+          createdAt: updatedService.created_at,
+          updatedAt: updatedService.updated_at
+        };
+
+        // Update local state
+        setServices(prev => prev.map(s => s.id === editingService.id ? frontendService : s));
         addNotification('Service Modifié', `Service ${serviceData.licensePlate} mis à jour`, 'success');
+        
       } else {
-        setServices(prev => [...prev, serviceData]);
+        // CREATE new service
+        const response = await fetch(config.API_ENDPOINTS.WASHES, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            immatriculation: serviceData.licensePlate,
+            serviceType: serviceData.serviceType,
+            vehicleType: serviceData.vehicleType,
+            price: serviceData.totalPrice,
+            photos: serviceData.photos,
+            motoDetails: serviceData.motoDetails
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to create service');
+        }
+
+        const savedService = await response.json();
+        
+        // Convert backend response to frontend format
+        const frontendService = {
+          ...serviceData,
+          id: savedService.id,
+          createdAt: savedService.created_at,
+          updatedAt: savedService.updated_at
+        };
+
+        // Add to local state
+        setServices(prev => [...prev, frontendService]);
         addNotification('Service Créé', `Nouveau service ${serviceData.licensePlate}`, 'success');
       }
       
-    
       setShowServiceForm(false);
       setEditingService(null);
+      
     } catch (error) {
       console.error('Error creating/updating service:', error);
-      addNotification('Erreur', 'Impossible de sauvegarder le service', 'error');
+      addNotification('Erreur', error.message || 'Impossible de sauvegarder le service', 'error');
     }
-  }, [editingService, setServices, addNotification]);
+  }, [editingService, addNotification]);
 
   const handleEditService = useCallback((service) => {
     try {
@@ -91,144 +209,114 @@ export const useServices = (addNotification) => {
     }
   }, [addNotification]);
 
-  const handleDeleteService = useCallback((serviceId) => {
+  // ✅ FIXED - Delete via backend API
+  const handleDeleteService = useCallback(async (serviceId) => {
     try {
       if (!serviceId) {
         throw new Error('Invalid service ID');
       }
 
       if (window.confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) {
+        const token = localStorage.getItem('auth_token');
+        
+        const response = await fetch(`${config.API_ENDPOINTS.WASHES}/${serviceId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to delete service');
+        }
+
+        // Remove from local state
         setServices(prev => prev.filter(s => s.id !== serviceId));
-        addNotification('Service Supprimé', 'Le service a été supprimé avec succès', 'success');
+        addNotification('Service Supprimé', 'Service supprimé avec succès', 'success');
       }
     } catch (error) {
       console.error('Error deleting service:', error);
-      addNotification('Erreur', 'Impossible de supprimer le service', 'error');
+      addNotification('Erreur', error.message || 'Impossible de supprimer le service', 'error');
     }
-  }, [setServices, addNotification]);
+  }, [addNotification]);
 
-  // NEW: Finish Service Timer Function
-  const finishService = useCallback((serviceId) => {
+  // ✅ FIXED - Complete service via backend API
+  const handleCompleteService = useCallback(async (serviceId) => {
     try {
-      const now = new Date().toISOString();
+      const token = localStorage.getItem('auth_token');
       
-      setServices(prev => prev.map(service => {
-        if (service.id === serviceId && service.isActive) {
-          const startTime = new Date(service.timeStarted);
-          const endTime = new Date(now);
-          const totalDuration = Math.floor((endTime - startTime) / 1000);
-          
-          // Calculate individual staff durations
-          const updatedStaffDurations = { ...service.staffDurations };
-          if (updatedStaffDurations) {
-            Object.keys(updatedStaffDurations).forEach(staffId => {
-              if (updatedStaffDurations[staffId] && updatedStaffDurations[staffId].isActive) {
-                const staffStartTime = new Date(updatedStaffDurations[staffId].startTime);
-                updatedStaffDurations[staffId] = {
-                  ...updatedStaffDurations[staffId],
-                  totalTime: Math.floor((endTime - staffStartTime) / 1000),
-                  isActive: false
-                };
-              }
-            });
-          }
-          
-          return {
-            ...service,
-            timeFinished: now,
-            totalDuration,
-            staffDurations: updatedStaffDurations,
-            isActive: false,
-            completed: true
-          };
+      const response = await fetch(`${config.API_ENDPOINTS.WASHES}/${serviceId}/complete`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
-        return service;
-      }));
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to complete service');
+      }
+
+      // Update local state
+      setServices(prev => prev.map(s => 
+        s.id === serviceId ? { ...s, completed: true } : s
+      ));
       
-      addNotification('Service Terminé', 'Timer arrêté et service marqué comme terminé', 'success');
+      addNotification('Service Terminé', 'Service marqué comme terminé', 'success');
     } catch (error) {
-      console.error('Error finishing service:', error);
-      addNotification('Erreur', 'Impossible de terminer le service', 'error');
+      console.error('Error completing service:', error);
+      addNotification('Erreur', error.message || 'Impossible de terminer le service', 'error');
     }
-  }, [setServices, addNotification]);
+  }, [addNotification]);
 
-  // Enhanced export functionality
-  const exportToCSV = useCallback(() => {
-    try {
-      const headers = [
-        'Date', 'Plaque', 'Type Plaque', 'Type Véhicule', 'Marque', 'Modèle', 'Couleur',
-        'Service', 'Staff', 'Prix (DT)', 'Téléphone', 'Notes', 'Durée (min)', 'Statut', 'Créé le', 'Modifié le'
-      ];
-      
-      const csvData = filteredServices.map(service => [
-        service.date || '',
-        service.licensePlate || '',
-        service.plateType === 'tunisienne' ? 'Tunisienne' : 'Internationale',
-        service.vehicleType || '',
-        service.vehicleBrand || '',
-        service.vehicleModel || '',
-        service.vehicleColor || '',
-        serviceConfig[service.serviceType]?.name || service.serviceType || '',
-        Array.isArray(service.staff) ? service.staff.join(' + ') : '',
-        service.totalPrice || 0,
-        service.phone || '',
-        service.notes || '',
-        service.totalDuration ? Math.floor(service.totalDuration / 60) : 0,
-        service.isActive ? 'En cours' : service.completed ? 'Terminé' : 'Non démarré',
-        service.createdAt || '',
-        service.updatedAt || ''
-      ]);
-
-      const csvContent = [
-        headers.join(','),
-        ...csvData.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-      ].join('\n');
-
-      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `jouini_luxury_export_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      localStorage.setItem('jouini_last_export', new Date().toISOString());
-      addNotification('Export Réussi', 'Données luxury exportées avec succès', 'success');
-    } catch (error) {
-      console.error('Export error:', error);
-      addNotification('Erreur Export', 'Impossible d\'exporter les données', 'error');
-    }
-  }, [filteredServices, serviceConfig, addNotification]);
+  // Filter functions
+  const clearFilters = useCallback(() => {
+    setSearchTerm('');
+    setFilterVehicleType('all');
+    setFilterStaff('all');
+    setFilterServiceType('all');
+    setFilterBrand('all');
+    setDateRange({ start: '', end: '' });
+  }, []);
 
   return {
-    services,
-    setServices,
+    // Data
+    services: filteredServices,
     serviceConfig,
-    setServiceConfig,
-    filteredServices,
+    loading,
+    
+    // Form state
     showServiceForm,
-    setShowServiceForm,
     editingService,
-    setEditingService,
+    
+    // Filter state
     searchTerm,
-    setSearchTerm,
     filterVehicleType,
-    setFilterVehicleType,
     filterStaff,
-    setFilterStaff,
     filterServiceType,
-    setFilterServiceType,
     filterBrand,
-    setFilterBrand,
     dateRange,
-    setDateRange,
+    
+    // Actions
     handleCreateService,
     handleEditService,
     handleDeleteService,
-    exportToCSV,
-    finishService
+    handleCompleteService,
+    fetchServices,
+    
+    // Form controls
+    setShowServiceForm,
+    setEditingService,
+    
+    // Filter controls
+    setSearchTerm,
+    setFilterVehicleType,
+    setFilterStaff,
+    setFilterServiceType,
+    setFilterBrand,
+    setDateRange,
+    clearFilters
   };
 }; 
