@@ -32,12 +32,13 @@ const ServicesList = ({
   setSortOrder
 }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
-
+  const safeServices = Array.isArray(services) ? services : [];
+  const safeFiltered = Array.isArray(filteredServices) ? filteredServices : safeServices;
   // Calculate statistics
-  const totalServices = filteredServices.length;
-  const activeServices = filteredServices.filter(s => s.isActive && !s.timeFinished && !isDateBeforeToday(s.date)).length;
-  const completedServices = filteredServices.filter(s => s.timeFinished || isDateBeforeToday(s.date)).length;
-  const totalRevenue = filteredServices.reduce((sum, s) => sum + (s.totalPrice || 0), 0);
+   const totalServices     = safeFiltered.length;
+   const activeServices    = safeFiltered.filter(s => s.isActive && !s.timeFinished && !isDateBeforeToday(s.date)).length;
+   const completedServices = safeFiltered.filter(s => s.timeFinished || isDateBeforeToday(s.date)).length;
+   const totalRevenue      = safeFiltered.reduce((sum, s) => sum + (s.totalPrice || 0), 0);
 
   return (
     <div className="space-y-4">
@@ -75,14 +76,14 @@ const ServicesList = ({
       />
 
       {/* Enhanced Services Display */}
-      {filteredServices.length === 0 ? (
+      {safeFiltered.length === 0 ? (
         <div className={`${currentTheme.surface} rounded-2xl p-6 text-center shadow-xl border ${currentTheme.border}`}>
           <div className="w-24 h-24 bg-gradient-to-r from-blue-500 via-purple-600 to-indigo-700 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Car className="text-white" size={40} />
           </div>
           <h3 className={`text-xl font-bold ${currentTheme.text} mb-3`}>Aucun service trouvé</h3>
           <p className={`${currentTheme.textSecondary} mb-4 text-sm`}>
-            {services.length === 0 
+            {(safeServices.length === 0) 
               ? "Commencez par créer votre premier service"
               : "Aucun service ne correspond à vos critères de recherche"
             }
@@ -91,13 +92,13 @@ const ServicesList = ({
             onClick={onShowServiceForm}
             className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 via-purple-600 to-indigo-700 text-white font-bold hover:scale-105 hover:shadow-xl transition-all duration-300 text-sm shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50"
           >
-            {services.length === 0 ? 'Créer le Premier Service' : 'Nouveau Service Premium'}
+            {safeServices.length === 0 ? 'Créer le Premier Service' : 'Nouveau Service Premium'}
           </button>
         </div>
       ) : (
-        <ServiceTable 
-          theme={theme}
-          filteredServices={filteredServices}
+        <ServiceTable
+        theme={theme} 
+        filteredServices={safeFiltered}
           serviceConfig={serviceConfig}
           onEditService={onEditService}
           onDeleteService={onDeleteService}
