@@ -404,6 +404,7 @@ if (formData.serviceType === 'complet-premium') {
         createdAt: existingService?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         completed: existingService?.completed || false
+        
       };
       
       // Simulate async operation
