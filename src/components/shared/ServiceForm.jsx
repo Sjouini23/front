@@ -17,7 +17,8 @@ import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
 import { SERVICE_TYPES, STAFF_MEMBERS, VEHICLE_TYPES, ALL_BRANDS, VEHICLE_COLORS } from '../../utils/configs';
 import { sanitizeInput, validateLicensePlate, validatePhone, isValidDate, safeParseNumber } from '../../utils/validation';
 import { getCurrentDateString } from '../../utils/dateUtils';
-import API_BASE_URL from '../../config.local';
+import config from '../../config.local';
+
 
 // ENHANCED VEHICLE_TYPES with TAXI
 const ENHANCED_VEHICLE_TYPES = {
@@ -406,9 +407,42 @@ if (formData.serviceType === 'complet-premium') {
       };
       
       // Simulate async operation
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      onSubmit(sanitizedData);
+      // Get authentication token
+const token = localStorage.getItem('auth_token');
+
+// Create service via backend API
+const response = await fetch(config.API_ENDPOINTS.WASHES, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    immatriculation: sanitizedData.licensePlate,
+    serviceType: sanitizedData.serviceType,
+    vehicleType: sanitizedData.vehicleType,
+    price: sanitizedData.totalPrice,
+    photos: sanitizedData.photos,
+    motoDetails: sanitizedData.motoDetails
+  })
+});
+
+if (!response.ok) {
+  const errorData = await response.json().catch(() => ({}));
+  throw new Error(errorData.error || 'Failed to save service');
+}
+
+const savedService = await response.json();
+
+// Convert backend response to frontend format
+const frontendService = {
+  ...sanitizedData,
+  id: savedService.id,
+  createdAt: savedService.created_at,
+  updatedAt: savedService.updated_at
+};
+
+onSubmit(frontendService);
       
       addNotification(
         'Succès',
