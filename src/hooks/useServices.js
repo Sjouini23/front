@@ -270,42 +270,135 @@ export const useServices = (addNotification) => {
     setFilterBrand('all');
     setDateRange({ start: '', end: '' });
   }, []);
+// ✅ ADD EXPORT FUNCTION
+const exportToCSV = useCallback(() => {
+  console.log('📊 Exporting services to CSV...');
+  
+  try {
+    if (!filteredServices || filteredServices.length === 0) {
+      addNotification('⚠️ Aucune Donnée', 'Aucun service à exporter', 'warning');
+      return;
+    }
+    
+    const headers = ['Date', 'Plaque', 'Type Service', 'Type Véhicule', 'Marque', 'Prix Total', 'Staff', 'Statut'];
+    
+    const csvData = filteredServices.map(service => [
+      service.date || '',
+      service.licensePlate || '',
+      service.serviceType || '',
+      service.vehicleType || '',
+      service.vehicleBrand || '',
+      service.totalPrice || 0,
+      Array.isArray(service.staff) ? service.staff.join(', ') : '',
+      service.completed ? 'Terminé' : 'En cours'
+    ]);
 
-  return {
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `services_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    addNotification('✅ Export Réussi', `${filteredServices.length} services exportés`, 'success');
+    
+  } catch (error) {
+    console.error('❌ Export error:', error);
+    addNotification('❌ Erreur Export', error.message, 'error');
+  }
+}, [filteredServices, addNotification]);
+
+// ✅ ADD FINISH SERVICE FUNCTION
+const finishService = useCallback(async (serviceId) => {
+  console.log('🏁 Finishing service:', serviceId);
+  
+  try {
+    const now = new Date().toISOString();
+    const serviceToFinish = filteredServices.find(s => s.id === serviceId);
+    
+    if (!serviceToFinish) {
+      throw new Error('Service introuvable');
+    }
+    
+    let totalDurationSeconds = 0;
+    if (serviceToFinish.timeStarted) {
+      const startTime = new Date(serviceToFinish.timeStarted);
+      const endTime = new Date(now);
+      totalDurationSeconds = Math.floor((endTime - startTime) / 1000);
+    }
+    
+    const timerUpdateData = {
+      timeFinished: now,
+      totalDuration: totalDurationSeconds,
+      isActive: false,
+      completed: true,
+      updatedAt: now
+    };
+    
+    // Update local state immediately
+    setServices(prev => prev.map(service => 
+      service.id === serviceId ? { ...service, ...timerUpdateData } : service
+    ));
+    
+    const durationMinutes = Math.floor(totalDurationSeconds / 60);
+    addNotification('🏁 Service Terminé', `Durée: ${durationMinutes}min`, 'success');
+    
+  } catch (error) {
+    console.error('❌ Error finishing service:', error);
+    addNotification('❌ Erreur', error.message, 'error');
+  }
+}, [filteredServices, addNotification]);
+  
     // ✅ FIXED: Return filtered services directly (no circular reference)
-    services: filteredServices,
-    serviceConfig,
-    loading,
-    
-    // Form state
-    showServiceForm,
-    editingService,
-    
-    // ✅ KEEP ALL YOUR FILTERS
-    searchTerm,
-    filterVehicleType,
-    filterStaff,
-    filterServiceType,
-    filterBrand,
-    dateRange,
-    
-    // ✅ KEEP ALL YOUR FUNCTIONS  
-    handleCreateService,
-    handleEditService,
-    handleDeleteService,
-    fetchServices,
-    
-    // Form controls
-    setShowServiceForm,
-    setEditingService,
-    
-    // Filter controls
-    setSearchTerm,
-    setFilterVehicleType,
-    setFilterStaff,
-    setFilterServiceType,
-    setFilterBrand,
-    setDateRange,
-    clearFilters
-  };
-}; 
+    return {
+  // Data
+  services: filteredServices,
+  filteredServices: filteredServices,  // ⭐ ADD THIS LINE
+  serviceConfig,
+  loading,
+  
+  // Form state
+  showServiceForm,
+  editingService,
+  
+  // Filter state
+  searchTerm,
+  filterVehicleType,
+  filterStaff,
+  filterServiceType,
+  filterBrand,
+  dateRange,
+  
+  // Actions
+  handleCreateService,
+  handleEditService,
+  handleDeleteService,
+  fetchServices,
+  exportToCSV,        // ⭐ ADD THIS LINE
+  finishService,      // ⭐ ADD THIS LINE
+  
+  // Form controls
+  setShowServiceForm,
+  setEditingService,
+  setServiceConfig,   // ⭐ ADD THIS LINE
+  
+  // Filter controls
+  setSearchTerm,
+  setFilterVehicleType,
+  setFilterStaff,
+  setFilterServiceType,
+  setFilterBrand,
+  setDateRange,
+  clearFilters
+};
+};
