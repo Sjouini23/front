@@ -9,7 +9,7 @@ import {
   safeNumber,
   calculateSafeRevenue
 } from '../utils/dataSafetyUtils'; // ✅ These imports work fine!
-
+import { washesAPI } from '../utils/api';
 export const useServices = (addNotification) => {
   const [services, setServices] = useState([]);
   const [serviceConfig, setServiceConfig] = useState(SERVICE_TYPES);
@@ -318,47 +318,70 @@ const exportToCSV = useCallback(() => {
   }
 }, [filteredServices, addNotification]);
 
-// ✅ ADD FINISH SERVICE FUNCTION
+// Replace the finishService function in useServices.js (around line 180-210):
+
 const finishService = useCallback(async (serviceId) => {
   console.log('🏁 Finishing service:', serviceId);
   
   try {
-    const now = new Date().toISOString();
     const serviceToFinish = filteredServices.find(s => s.id === serviceId);
     
     if (!serviceToFinish) {
       throw new Error('Service introuvable');
     }
-    
-    let totalDurationSeconds = 0;
-    if (serviceToFinish.timeStarted) {
-      const startTime = new Date(serviceToFinish.timeStarted);
-      const endTime = new Date(now);
-      totalDurationSeconds = Math.floor((endTime - startTime) / 1000);
+    // 🚨 FIX: Check if service is actually active and has a timer
+     if (!serviceToFinish.isActive || !serviceToFinish.timeStarted) {
+      throw new Error('Ce service n\'a pas de chronomètre actif');
     }
     
-    const timerUpdateData = {
-      timeFinished: now,
-      totalDuration: totalDurationSeconds,
-      isActive: false,
-      completed: true,
-      updatedAt: now
-    };
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('Token d\'authentification manquant');
+    }
     
-    // Update local state immediately
+    // 🚨 FIX: Actually call the server to finish the timer
+      const response = await washesAPI.finish(serviceId);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
+    }
+    const result = await response.json();
+    // Update local state with the server response
     setServices(prev => prev.map(service => 
-      service.id === serviceId ? { ...service, ...timerUpdateData } : service
+      service.id === serviceId ? {
+        ...service,
+        timeFinished: result.service.time_finished,
+        totalDuration: result.service.total_duration,
+        isActive: false,
+        completed: true,
+        updatedAt: result.service.updated_at
+      } : service
     ));
     
-    const durationMinutes = Math.floor(totalDurationSeconds / 60);
-    addNotification('🏁 Service Terminé', `Durée: ${durationMinutes}min`, 'success');
+    addNotification('🏁 Service Terminé', `Durée: ${result.durationMinutes}min`, 'success');
+  setServices(prev => prev.map(service => 
+      service.id === serviceId ? {
+        ...service,
+        timeFinished: result.service.time_finished,
+        totalDuration: result.service.total_duration,
+        isActive: false,
+        completed: true,
+        status: 'completed',
+        updatedAt: result.service.updated_at
+      } : service
+    ));
+    
+    addNotification('🏁 Service Terminé', `Durée: ${result.durationMinutes}min`, 'success');
+    
+    // Refresh data from server to ensure consistency
+    await fetchServices();
     
   } catch (error) {
     console.error('❌ Error finishing service:', error);
     addNotification('❌ Erreur', error.message, 'error');
   }
-}, [filteredServices, addNotification]);
-  
+}, [filteredServices, addNotification, setServices, fetchServices]);
     // ✅ FIXED: Return filtered services directly (no circular reference)
     return {
   // Data

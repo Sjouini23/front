@@ -53,6 +53,8 @@ export const authAPI = {
   }
 };
 
+// Fix the washesAPI object in api.js - there's a missing closing brace:
+
 export const washesAPI = {
   getAll: async (filters = {}) => {
     const queryString = new URLSearchParams(filters).toString();
@@ -75,9 +77,15 @@ export const washesAPI = {
   
   delete: async (id) => {
     return await apiRequest(`/washes/${id}`, { method: 'DELETE' });
+  },
+  
+  // ✅ MOVED INSIDE the washesAPI object with proper comma
+  finish: async (id) => {
+    return await apiRequest(`/washes/${id}/finish`, {
+      method: 'PATCH'
+    });
   }
-};
-
+}; // ✅ ADDED MISSING CLOSING BRACE
 export const statsAPI = {
   getDashboard: async () => {
     return await apiRequest('/stats');

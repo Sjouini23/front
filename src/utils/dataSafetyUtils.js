@@ -88,7 +88,7 @@ export const standardizeServiceData = (rawService) => {
       timeStarted: rawService.time_started || rawService.timeStarted || null,
       timeFinished: rawService.time_finished || rawService.timeFinished || null,
       totalDuration: safeNumber(rawService.total_duration || rawService.totalDuration, 0),
-      
+      status: rawService.status || (rawService.completed ? 'completed' : 'active'),
       // Moto details
       motoDetails: rawService.moto_details || rawService.motoDetails || null
     };
