@@ -56,6 +56,11 @@ const ServiceTable = ({
     }
     
     if (!startTime) return '00:00:00';
+    console.log('🐛 DEBUG Timer:');
+  console.log('- startTime (raw):', startTime);
+  console.log('- startTime (parsed):', new Date(startTime));
+  console.log('- currentTime:', currentTime);
+  console.log('- Timezone offset:', new Date().getTimezoneOffset());
     const start = new Date(startTime);
     const end = endTime ? new Date(endTime) : currentTime;
     const diff = Math.floor((end - start) / 1000);
