@@ -273,7 +273,9 @@ export const validateServiceBeforeSend = (serviceData) => {
     phone: serviceData.phone || '',
     notes: serviceData.notes || '',
     photos: Array.isArray(serviceData.photos) ? serviceData.photos : [],
-    motoDetails: serviceData.motoDetails || null
+    motoDetails: serviceData.motoDetails || null,
+    date: serviceData.date,
+    createdAt: serviceData.createdAt
   };
   
   return {
