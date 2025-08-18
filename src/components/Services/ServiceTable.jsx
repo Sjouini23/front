@@ -47,30 +47,42 @@ const ServiceTable = ({
   };
 
   // Format timer duration
-  const formatDuration = (startTime, endTime = null, totalDuration = null) => {
-    if (totalDuration) {
-      const hours = Math.floor(totalDuration / 3600);
-      const minutes = Math.floor((totalDuration % 3600) / 60);
-      const seconds = totalDuration % 60;
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-    
-    if (!startTime) return '00:00:00';
-    console.log('🐛 DEBUG Timer:');
-  console.log('- startTime (raw):', startTime);
-  console.log('- startTime (parsed):', new Date(startTime));
-  console.log('- currentTime:', currentTime);
-  console.log('- Timezone offset:', new Date().getTimezoneOffset());
-    const start = new Date(startTime);
-    const end = endTime ? new Date(endTime) : currentTime;
-    const diff = Math.floor((end - start) / 1000);
-    
-    const hours = Math.floor(diff / 3600);
-    const minutes = Math.floor((diff % 3600) / 60);
-    const seconds = diff % 60;
-    
+ // Replace the formatDuration function in ServiceTable.jsx:
+
+const formatDuration = (startTime, endTime = null, totalDuration = null) => {
+  // 1. If we have final duration, show it (completed timers)
+  if (totalDuration) {
+    const hours = Math.floor(totalDuration / 3600);
+    const minutes = Math.floor((totalDuration % 3600) / 60);
+    const seconds = totalDuration % 60;
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
+  }
+  
+  // 2. If no start time, show 00:00:00
+  if (!startTime) return '00:00:00';
+  
+  // 🌍 UNIVERSAL SOLUTION: Use UTC for all calculations
+  const startUTC = new Date(startTime).getTime(); // Convert to UTC milliseconds
+  const nowUTC = endTime ? new Date(endTime).getTime() : Date.now(); // Current UTC time
+  
+  // Calculate difference in seconds (always positive)
+  let diffSeconds = Math.floor((nowUTC - startUTC) / 1000);
+  
+  // 🔧 For "session timers" - if more than 1 hour difference, reset to fresh timer
+  // This handles cases where timer should start fresh regardless of creation time
+  if (!endTime && diffSeconds > 3600) { // More than 1 hour
+    diffSeconds = diffSeconds % 3600; // Start within the current hour
+  }
+  
+  // Ensure no negative values
+  diffSeconds = Math.max(0, diffSeconds);
+  
+  const hours = Math.floor(diffSeconds / 3600);
+  const minutes = Math.floor((diffSeconds % 3600) / 60);
+  const seconds = diffSeconds % 60;
+  
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
 
   // Sort services based on sortOrder
   const getSortedServices = (services) => {
