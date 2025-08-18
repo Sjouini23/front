@@ -1,5 +1,9 @@
 // src/utils/api.js - API Helper with Authentication
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+console.log('🔍 API_BASE_URL check:', {
+  'process.env.REACT_APP_API_URL': process.env.REACT_APP_API_URL,
+  'Final API_BASE_URL': API_BASE_URL
+});
 
 // Helper to make authenticated requests
 export const apiRequest = async (endpoint, options = {}) => {
