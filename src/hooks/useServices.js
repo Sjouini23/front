@@ -195,7 +195,7 @@ export const useServices = (addNotification) => {
             phone: safeData.phone,
             notes: safeData.notes,
             date: serviceData.date,
-            createdAt: serviceData.createdAt
+           
           })
         });
 console.log('🚀 Sending date to server:', {
