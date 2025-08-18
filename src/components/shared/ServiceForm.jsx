@@ -178,13 +178,6 @@ if (formData.serviceType === 'complet-premium') {
     const adjustment = parseFloat(formData.priceAdjustment) || 0;
     const total = Math.max(0, basePrice + adjustment);
     
-    console.log('Price calculation:', {
-      serviceType: formData.serviceType,
-      basePrice,
-      adjustment,
-      total,
-      service
-    });
     
     return total;
   } catch (error) {
