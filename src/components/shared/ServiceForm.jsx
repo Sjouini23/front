@@ -134,11 +134,7 @@ const AppleLuxuryServiceForm = React.memo(({
   
   // FIXED price calculation using serviceConfig from settings + manual adjustment
   // Add this temporarily to debug
-console.log('Current serviceConfig:', serviceConfig);
-console.log('Service type:', formData.serviceType);
-if (formData.serviceType === 'complet-premium') {
-  console.log('Complet Premium config:', serviceConfig?.['complet-premium']);
-}
+
   const calculatePrice = useCallback(() => {
   try {
     // Priority 1: Try serviceConfig first
