@@ -6,10 +6,7 @@ const Header = ({ theme, currentTime, serviceData }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   
   // DEBUG CHECK - Remove this after fixing
-  console.log('Header - serviceData:', serviceData);
-  console.log('Header - exportToCSV exists:', serviceData?.exportToCSV);
-  console.log('Header - exportToCSV type:', typeof serviceData?.exportToCSV);
-  
+ 
   const handleFeedbackClick = () => {
     window.open('https://docs.google.com/forms/d/e/1FAIpQLSeu8c3U__QmoK6YUpJJc6uIGW_C4CtYWBh8yU67yYTOX3YQXA/viewform?usp=header', '_blank');
   };
