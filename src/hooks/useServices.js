@@ -193,10 +193,16 @@ export const useServices = (addNotification) => {
             vehicle_color: safeData.vehicleColor,
             staff: safeData.staff,
             phone: safeData.phone,
-            notes: safeData.notes
+            notes: safeData.notes,
+            date: serviceData.date,
+            createdAt: serviceData.createdAt
           })
         });
-
+console.log('🚀 Sending date to server:', {
+  date: safeData.date,
+  createdAt: safeData.createdAt,
+  licensePlate: safeData.licensePlate
+});
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
