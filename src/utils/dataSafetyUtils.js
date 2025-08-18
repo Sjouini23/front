@@ -71,7 +71,7 @@ export const standardizeServiceData = (rawService) => {
              rawService.staff ? [rawService.staff] : [],
       
       // Dates and timing
-      date: rawService.created_at?.split('T')[0] || rawService.date || new Date().toISOString().split('T')[0],
+      date: rawService.time_started?.split('T')[0] || rawService.created_at?.split('T')[0] || rawService.date || new Date().toISOString().split('T')[0],
       createdAt: rawService.created_at || rawService.createdAt || new Date().toISOString(),
       updatedAt: rawService.updated_at || rawService.updatedAt || new Date().toISOString(),
       
