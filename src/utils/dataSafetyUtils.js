@@ -85,9 +85,9 @@ export const standardizeServiceData = (rawService) => {
       photos: Array.isArray(rawService.photos) ? rawService.photos : [],
       
       // Timer fields
-      timeStarted: rawService.time_started || rawService.timeStarted || null,
-      timeFinished: rawService.time_finished || rawService.timeFinished || null,
-      totalDuration: safeNumber(rawService.total_duration || rawService.totalDuration, 0),
+      timeStarted: rawService.start_time || rawService.timeStarted || null,
+      timeFinished: rawService.end_time || rawService.timeFinished || null,
+      totalDuration: safeNumber(rawService.duration || rawService.totalDuration, 0),
       status: rawService.status || (rawService.completed ? 'completed' : 'active'),
       // Moto details
       motoDetails: rawService.moto_details || rawService.motoDetails || null
