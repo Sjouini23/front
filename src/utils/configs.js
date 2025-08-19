@@ -1,7 +1,7 @@
 export const VEHICLE_BRANDS = {
   premium: ['Audi', 'BMW', 'Mercedes-Benz', 'Lexus', 'Infiniti', 'Acura', 'Genesis', 'Volvo'],
   luxury: ['Porsche', 'Jaguar', 'Land Rover', 'Bentley', 'Ferrari', 'Lamborghini', 'Maserati', 'Aston Martin'],
-  mainstream: ['Toyota', 'Honda', 'Nissan', 'Mazda', 'Subaru', 'Mitsubishi', 'Hyundai', 'Kia', 'Mahindra','BYD','SsangYong','Cupra'],
+  mainstream: ['Toyota', 'Honda', 'Nissan', 'Mazda', 'Subaru', 'Mitsubishi', 'Hyundai', 'Kia', 'Mahindra','BYD','SsangYong'],
   european: ['Volkswagen', 'Renault', 'Peugeot', 'Citroën', 'Fiat', 'Alfa Romeo', 'Opel', 'SEAT', 'Skoda', 'TATA', 'Chery', 'MG Motors','Lancia','Cupra'],
   american: ['Ford', 'Chevrolet', 'Cadillac', 'Lincoln', 'Jeep', 'Dodge', 'Chrysler' , 'Haval', 'Suzuki', ],
   local: ['Wallyscar', 'STAFIM'],
