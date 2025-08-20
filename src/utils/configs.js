@@ -54,7 +54,7 @@ export const SERVICE_TYPES = {
     description: 'Nettoyage extérieur approfondi avec finition brillante',
     features: ['Lavage carrosserie', 'Jantes et pneus', 'Séchage premium'],
     duration: 30,
-    basePrice: 15,
+    basePrice: 8,
     color: 'green'
   },
   interieur: {
@@ -63,7 +63,7 @@ export const SERVICE_TYPES = {
     description: 'Nettoyage intérieur complet avec aspiration et désinfection',
     features: ['Aspiration complète', 'Tableaux de bord', 'Désinfection'],
     duration: 45,
-    basePrice: 20,
+    basePrice: 8,
     color: 'purple'
   },
   'interieur-exterieur': {
@@ -72,7 +72,7 @@ export const SERVICE_TYPES = {
     description: 'Nettoyage intérieur et extérieur standard pour circulation urbaine',
     features: ['Intérieur + Extérieur', 'Finition standard', 'Séchage inclus'],
     duration: 60,
-    basePrice: 30,
+    basePrice: 15,
     color: 'blue'
   },
   complet: {
@@ -81,7 +81,7 @@ export const SERVICE_TYPES = {
     description: 'Service de nettoyage complet premium avec tous les services inclus',
     features: ['Tout inclus', 'Finition premium', 'Garantie qualité'],
     duration: 90,
-    basePrice: 45,
+    basePrice: 60,
     color: 'purple'
   }
 };
