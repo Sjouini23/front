@@ -162,10 +162,10 @@ const AppleLuxuryServiceForm = React.memo(({
     // Priority 4: Hard-coded fallback as last resort
     if (!service) {
       const hardcodedPrices = {
-        'lavage-ville': 25,
-        'interieur': 20,
-        'exterieur': 15,
-        'complet-premium': 45
+        'lavage-ville': 15,
+        'interieur': 8,
+        'exterieur': 8,
+        'complet-premium': 60
       };
       service = { basePrice: hardcodedPrices[formData.serviceType] || 0 };
     }
