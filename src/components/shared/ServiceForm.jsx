@@ -38,7 +38,7 @@ const REORDERED_SERVICE_TYPES = {
     description: 'Intérieur complet + Extérieur standard',
     icon: '🚗',
     color: 'blue',
-    basePrice: 25, // ← FIXED: Added missing basePrice
+    basePrice: 15, // ← FIXED: Added missing basePrice
     features: ['Intérieur complet', 'Extérieur standard', 'Aspirateur', 'Lavage carrosserie']
   },
   'interieur': {
@@ -46,7 +46,7 @@ const REORDERED_SERVICE_TYPES = {
     description: 'Nettoyage intérieur uniquement',
     icon: '🧽',
     color: 'green',
-    basePrice: 20, // ← FIXED: Added missing basePrice (matches your screenshot)
+    basePrice: 8, // ← FIXED: Added missing basePrice (matches your screenshot)
     features: ['Aspirateur', 'Nettoyage sièges', 'Tableau de bord', 'Vitres intérieures']
   },
   'exterieur': {
@@ -54,7 +54,7 @@ const REORDERED_SERVICE_TYPES = {
     description: 'Lavage extérieur uniquement',
     icon: '🚿',
     color: 'purple',
-    basePrice: 15, // ← FIXED: Added missing basePrice (matches your screenshot)
+    basePrice: 8, // ← FIXED: Added missing basePrice (matches your screenshot)
     features: ['Lavage carrosserie', 'Rinçage', 'Séchage', 'Pneus']
   },
   'complet-premium': {
@@ -62,7 +62,7 @@ const REORDERED_SERVICE_TYPES = {
     description: 'Service complet premium avec finitions spéciales',
     icon: '⭐',
     color: 'gold',
-    basePrice: 45, // ← FIXED: Added missing basePrice
+    basePrice: 60, // ← FIXED: Added missing basePrice
     features: ['Tout inclus', 'Cire protection', 'Détailing', 'Parfum intérieur']
   }
 };
