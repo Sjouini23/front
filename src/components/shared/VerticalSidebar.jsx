@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
+import { isDateBeforeToday } from '../../utils/dateUtils';
 
 // Custom hook for window size
 const useWindowSize = () => {
@@ -375,12 +376,13 @@ const TeslaVerticalSidebar = React.memo(({
     
     // Only count services that are actively running (en cours) - not auto-terminated
     const activeTimers = services.filter(s => 
-      s.isActive && 
-      !s.timeFinished && 
-      s.timeStarted &&
-      !s.completed &&
-      !s.autoTerminated // Exclude auto-terminated services
-    ).length;
+  s.isActive && 
+  !s.timeFinished && 
+  s.timeStarted &&
+  !s.completed &&
+  !s.autoTerminated && // Exclude auto-terminated services
+  !isDateBeforeToday(s.date) // Exclude past date services
+).length;
     
     const completedToday = todayServices.filter(s => s.timeFinished || s.completed || s.autoTerminated).length;
     const todayRevenue = todayServices.reduce((sum, s) => sum + (s.totalPrice || 0), 0);

@@ -1642,12 +1642,12 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury' }) => {
       // Safe active services using REAL service structure
       try {
         analysis.activeServices = services.filter(s => {
-          try {
-            return s?.isActive && s?.timeStarted && !s?.timeFinished;
-          } catch {
-            return false;
-          }
-        }).map(service => {
+      try {
+          return s?.isActive && s?.timeStarted && !s?.timeFinished && !isDateBeforeToday(s?.date);
+      } catch {
+          return false;
+      }
+}).map(service => {
           try {
             const startTime = new Date(service.timeStarted);
             const elapsed = Math.floor((now - startTime) / 60000);
