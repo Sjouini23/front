@@ -16,7 +16,7 @@ import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
 import { SERVICE_TYPES, STAFF_MEMBERS, VEHICLE_TYPES, ALL_BRANDS, VEHICLE_COLORS } from '../../utils/configs';
 import { sanitizeInput, validateLicensePlate, validatePhone, isValidDate, safeParseNumber } from '../../utils/validation';
-import { getCurrentDateString } from '../../utils/dateUtils';
+import { getCurrentDateString, isDateBeforeToday } from '../../utils/dateUtils';
 import config from '../../config.local';
 
 // ENHANCED VEHICLE_TYPES with TAXI
