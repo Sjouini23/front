@@ -389,7 +389,7 @@ const AppleLuxuryServiceForm = React.memo(({
   totalPrice: calculatePrice(),
   priceAdjustment: parseFloat(formData.priceAdjustment) || 0,
   // 🚨 FIX: Don't force today's date if user selected a specific date
-  date: formData.date || new Date().toISOString().split('T')[0],
+  date: formData.date || getCurrentDateString(),
   createdAt: existingService?.createdAt || new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   completed: existingService?.completed || false,

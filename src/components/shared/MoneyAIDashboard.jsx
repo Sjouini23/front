@@ -8,7 +8,7 @@ import {
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
 import { PREMIUM_SERVICES } from '../Services/ServicesFilters';
 import { STAFF_MEMBERS } from '../../utils/configs';
-
+import { getCurrentDateString } from '../../utils/dateUtils';
 const MoneyDashboard = ({ services, theme }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   
@@ -18,7 +18,7 @@ const MoneyDashboard = ({ services, theme }) => {
   const [selectedService, setSelectedService] = useState('all');
   const [dateRange, setDateRange] = useState({
     start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0]
+    end: getCurrentDateString()
   });
   const [showDetails, setShowDetails] = useState({
     revenue: true,

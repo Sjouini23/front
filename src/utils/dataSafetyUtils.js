@@ -1,5 +1,6 @@
 // utils/dataSafetyUtils.js - Add this new file
 // This will fix ALL your NaN and data sync issues
+import { getCurrentDateString } from './dateUtils';
 
 // ✅ SAFE NUMBER CONVERSION - Fixes NaN and weird decimals
 export const safeNumber = (value, fallback = 0) => {
@@ -71,7 +72,7 @@ export const standardizeServiceData = (rawService) => {
              rawService.staff ? [rawService.staff] : [],
       
       // Dates and timing
-      date: rawService.time_started?.split('T')[0] || rawService.created_at?.split('T')[0] || rawService.date || new Date().toISOString().split('T')[0],
+      date: rawService.time_started?.split('T')[0] || rawService.created_at?.split('T')[0] || rawService.date || getCurrentDateString(),
       createdAt: rawService.created_at || rawService.createdAt || new Date().toISOString(),
       updatedAt: rawService.updated_at || rawService.updatedAt || new Date().toISOString(),
       
