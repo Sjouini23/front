@@ -343,18 +343,34 @@ const AppleLuxuryServiceForm = React.memo(({
 
   // NEW: Initialize timer when service is created
   const initializeTimer = useCallback(() => {
-    const now = new Date().toISOString();
-    const staffDurations = {};
-    
-    // Initialize timer for each assigned staff member
-    formData.staff.forEach(staffId => {
-      staffDurations[staffId] = {
-        startTime: now,
-        totalTime: 0,
-        isActive: true
-      };
-    });
+  const selectedDate = formData.date || getCurrentDateString();
+  const isPastDate = isDateBeforeToday(selectedDate);
+  const now = new Date().toISOString();
+  
+  // Initialize staff durations
+  const staffDurations = {};
+  formData.staff.forEach(staffId => {
+    staffDurations[staffId] = {
+      startTime: now,
+      totalTime: isPastDate ? 2700 : 0,
+      isActive: !isPastDate
+    };
+  });
 
+  if (isPastDate) {
+    // Auto-complete old data
+    const estimatedDuration = 2700; // 45 minutes
+    const startTime = new Date(selectedDate + 'T09:00:00').toISOString();
+    const endTime = new Date(new Date(startTime).getTime() + (estimatedDuration * 1000)).toISOString();
+    
+    return {
+      timeStarted: startTime,
+      timeFinished: endTime,
+      totalDuration: estimatedDuration,
+      staffDurations,
+      isActive: false
+    };
+  } else {
     return {
       timeStarted: now,
       timeFinished: null,
@@ -362,7 +378,8 @@ const AppleLuxuryServiceForm = React.memo(({
       staffDurations,
       isActive: true
     };
-  }, [formData.staff]);
+  }
+}, [formData.staff, formData.date]);
 
   // Form submission with enhanced error handling and TIMER INITIALIZATION
   const handleSubmit = useCallback(async () => {
@@ -392,8 +409,7 @@ const AppleLuxuryServiceForm = React.memo(({
   date: formData.date || getCurrentDateString(),
   createdAt: existingService?.createdAt || new Date().toISOString(),
   updatedAt: new Date().toISOString(),
-  completed: existingService?.completed || false,
-  motoDetails: formData.motoDetails || {}
+completed: existingService?.completed || isDateBeforeToday(formData.date || getCurrentDateString()),  motoDetails: formData.motoDetails || {}
 };
       // Simulate async operation
       // Get authentication token

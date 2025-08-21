@@ -8,8 +8,7 @@ import {
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
 import { PREMIUM_SERVICES } from '../Services/ServicesFilters';
 import { STAFF_MEMBERS } from '../../utils/configs';
-import { getCurrentDateString } from '../../utils/dateUtils';
-const MoneyDashboard = ({ services, theme }) => {
+import { getCurrentDateString, isDateBeforeToday } from '../../utils/dateUtils';const MoneyDashboard = ({ services, theme }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   
   // State for filters and display
