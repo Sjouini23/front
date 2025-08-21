@@ -200,7 +200,8 @@ const AppleLuxuryServiceForm = React.memo(({
         'lavage-ville': 'interieur-exterieur',
         'interieur': 'interieur',
         'exterieur': 'exterieur',
-        'complet-premium': 'complet'
+        'complet-premium': 'complet',
+        'tapis': 'tapis'
       };
       const mappedKey = keyMapping[formData.serviceType];
       if (mappedKey && serviceConfig) {
@@ -217,7 +218,8 @@ const AppleLuxuryServiceForm = React.memo(({
         'lavage-ville': 25,
         'interieur': 20,
         'exterieur': 15,
-        'complet-premium': 45
+        'complet-premium': 45,
+        'tapis': 0
       };
       return hardcodedPrices[formData.serviceType] || 0;
     }
@@ -537,7 +539,13 @@ onSubmit(sanitizedData);
         bg: isSelected ? 'bg-gradient-to-r from-yellow-500/15 to-yellow-600/15' : '',
         text: isSelected ? 'text-yellow-700 font-semibold' : '',
         features: isSelected ? 'bg-yellow-500/30 text-yellow-700 border border-yellow-500/40' : 'bg-gray-100 text-gray-600'
-      }
+      },
+      orange: {
+    border: isSelected ? 'border-orange-500' : 'border-gray-300 hover:border-orange-400',
+    bg: isSelected ? 'bg-gradient-to-r from-orange-500/15 to-orange-600/15' : '',
+    text: isSelected ? 'text-orange-700 font-semibold' : '',
+    features: isSelected ? 'bg-orange-500/30 text-orange-700 border border-orange-500/40' : 'bg-gray-100 text-gray-600'
+  }
     };
     
     return colorMap[service.color] || colorMap.blue;

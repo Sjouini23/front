@@ -37,7 +37,8 @@ const ServiceTable = ({
         'lavage-ville': 45 * 60,
         'interieur': 25 * 60,
         'exterieur': 20 * 60,
-        'complet-premium': 90 * 60
+        'complet-premium': 90 * 60,
+        'tapis': 30 * 60
       };
       return defaultDurations[serviceType] || 30 * 60;
     }

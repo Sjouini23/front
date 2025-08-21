@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Database, Wifi, Settings, Users, Car, Droplets, Star, DollarSign, Clock, MessageCircle, Mail, Send, Heart, Code } from 'lucide-react';
+import { Shield, Database,Square,Wifi, Settings, Users, Car, Droplets, Star, DollarSign, Clock, MessageCircle, Mail, Send, Heart, Code } from 'lucide-react';
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
 import { safeParseNumber } from '../../utils/validation';
 
@@ -102,7 +102,14 @@ const SettingsMain = ({
       description: 'Service complet haut de gamme',
       duration: calculateServiceDuration('complet-premium'),
       basePrice: 45
-    }
+    },
+    'tapis': {
+    name: 'Tapis',
+    description: 'Service tapis professionnel',
+    icon: <Square className="text-orange-500" size={20} />,
+    duration: 30,
+    basePrice: 0
+  }
   };
 
   return (
