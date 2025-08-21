@@ -64,6 +64,14 @@ const REORDERED_SERVICE_TYPES = {
     color: 'gold',
     basePrice: 60, // ← FIXED: Added missing basePrice
     features: ['Tout inclus', 'Cire protection', 'Détailing', 'Parfum intérieur']
+  },
+  'tapis': {
+    name: 'Tapis',
+    description: 'Nettoyage professionnel de tapis',
+    icon: '🔲',
+    basePrice: 0,
+    duration: 30,
+    color: 'orange'
   }
 };
 
