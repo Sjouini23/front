@@ -96,7 +96,11 @@ export default function JouiniLuxuryAI2025() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [serviceData.exportToCSV, serviceData.showServiceForm]);
+const isTVRoute = window.location.pathname === '/tv';
 
+if (isTVRoute) {
+  return <div className="min-h-screen bg-black text-white flex items-center justify-center text-4xl">🖥️ TV Display Route Detected!</div>;
+}
   // Enhanced Login Screen
   if (!authData.isAuthenticated) {
     return (
