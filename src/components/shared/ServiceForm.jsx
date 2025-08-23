@@ -64,14 +64,6 @@ const REORDERED_SERVICE_TYPES = {
     color: 'gold',
     basePrice: 60, // ← FIXED: Added missing basePrice
     features: ['Tout inclus', 'Cire protection', 'Détailing', 'Parfum intérieur']
-  },
-  'tapis': {
-    name: 'Tapis',
-    description: 'Nettoyage professionnel de tapis',
-    icon: '🔲',
-    basePrice: 0,
-    duration: 30,
-    color: 'orange'
   }
 };
 
@@ -200,8 +192,7 @@ const AppleLuxuryServiceForm = React.memo(({
         'lavage-ville': 'interieur-exterieur',
         'interieur': 'interieur',
         'exterieur': 'exterieur',
-        'complet-premium': 'complet',
-        'tapis': 'tapis'
+        'complet-premium': 'complet'
       };
       const mappedKey = keyMapping[formData.serviceType];
       if (mappedKey && serviceConfig) {
@@ -218,8 +209,7 @@ const AppleLuxuryServiceForm = React.memo(({
         'lavage-ville': 25,
         'interieur': 20,
         'exterieur': 15,
-        'complet-premium': 45,
-        'tapis': 0
+        'complet-premium': 45
       };
       return hardcodedPrices[formData.serviceType] || 0;
     }

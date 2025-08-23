@@ -102,14 +102,7 @@ const SettingsMain = ({
       description: 'Service complet haut de gamme',
       duration: calculateServiceDuration('complet-premium'),
       basePrice: 45
-    },
-    'tapis': {
-    name: 'Tapis',
-    description: 'Service tapis professionnel',
-    icon: <Square className="text-orange-500" size={20} />,
-    duration: 30,
-    basePrice: 0
-  }
+    }
   };
 
   return (

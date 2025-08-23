@@ -27,6 +27,12 @@ import { SettingsMain } from './components/Settings';
 
 
 export default function JouiniLuxuryAI2025() {
+  // 🔷 TV ROUTE DETECTION 
+  const isTVRoute = window.location.pathname === '/tv';
+  
+  if (isTVRoute) {
+    return <div className="min-h-screen bg-black text-white flex items-center justify-center text-4xl">🖥️ TV Display Route Detected!</div>;
+  }
   // Theme & UI State
   const [theme, setTheme] = useSecureLocalStorage('jouini_luxury_theme_2025', 'dark');
   const [activeTab, setActiveTab] = useState('dashboard');
