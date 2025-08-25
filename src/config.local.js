@@ -11,7 +11,9 @@ const config = {
     HEALTH: `${API_BASE_URL}/api/health`,
     STATS: `${API_BASE_URL}/api/stats`,
     ANALYTICS: `${API_BASE_URL}/api/analytics`,
-    INSIGHTS: `${API_BASE_URL}/api/insights`
+        INSIGHTS: `${API_BASE_URL}/api/insights`,
+    TV_CURRENT: `${API_BASE_URL}/api/tv/current-service`,
+    TV_QUEUE: `${API_BASE_URL}/api/tv/queue`
   }
 };
 

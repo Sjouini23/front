@@ -23,7 +23,7 @@ import { Header } from './components/Layout';
 import { PersonalAIAssistant } from './components/Dashboard';
 import { ServicesList } from './components/Services';
 import { SettingsMain } from './components/Settings';
-
+import TVDisplaySystem from './components/TVDisplay/TVDisplaySystem';
 
 
 export default function JouiniLuxuryAI2025() {
@@ -99,7 +99,7 @@ export default function JouiniLuxuryAI2025() {
   
 const isTVRoute = window.location.pathname === '/tv';
 if (isTVRoute) {
-  return <div>TV Display</div>;
+  return <TVDisplaySystem />;
 }
   // Enhanced Login Screen
   if (!authData.isAuthenticated) {
