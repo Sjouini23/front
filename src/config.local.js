@@ -12,7 +12,7 @@ const config = {
     STATS: `${API_BASE_URL}/api/stats`,
     ANALYTICS: `${API_BASE_URL}/api/analytics`,
         INSIGHTS: `${API_BASE_URL}/api/insights`,
-    TV_CURRENT: `${API_BASE_URL}/api/tv/current-service`,
+    TV_CURRENT: `${API_BASE_URL}/api/tv/current-services`,
     TV_QUEUE: `${API_BASE_URL}/api/tv/queue`
   }
 };

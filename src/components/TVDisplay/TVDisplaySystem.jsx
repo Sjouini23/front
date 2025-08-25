@@ -1,40 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Car, Users, Calendar, Monitor } from 'lucide-react';
+import { Clock, Car, Tv, AlertCircle, Users, Wrench } from 'lucide-react';
 import config from '../../config.local';
 
 const TVDisplaySystem = () => {
   const [currentView, setCurrentView] = useState('service'); // 'service' or 'advertising'
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [currentService, setCurrentService] = useState(null);
-  const [queue, setQueue] = useState([]);
+  const [currentServices, setCurrentServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentAdIndex, setCurrentAdIndex] = useState(0);
 
-  // Advertisements data
-  const advertisements = [
-    {
-      id: 1,
-      type: 'text',
-      content: 'JOUINI LAVAGE AUTO - Service Premium',
-      subtitle: 'Qualité Professionnelle • Équipe Experte • Résultats Garantis',
-      duration: 8000
-    },
-    {
-      id: 2,
-      type: 'text',
-      content: 'OFFRE SPÉCIALE -20%',
-      subtitle: 'Sur tous les services complets ce mois-ci',
-      duration: 6000
-    },
-    {
-      id: 3,
-      type: 'text',
-      content: 'LAVAGE MOTO SPÉCIALISÉ',
-      subtitle: 'Équipement adapté • Produits spécifiques • Prix avantageux',
-      duration: 7000
-    }
+  // Breaking news data
+  const breakingNews = [
+    "NOUVEAU: Service express 15 minutes - Lavage extérieur complet",
+    "PROMOTION: -20% sur tous les services premium ce mois-ci",
+    "SPÉCIALITÉ: Traitement céramique disponible sur demande",
+    "RAPIDE: Réservation en ligne maintenant disponible",
+    "QUALITÉ: Produits écologiques certifiés pour tous nos services"
   ];
+  const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
 
   // Update time every second
   useEffect(() => {
@@ -57,21 +40,15 @@ const TVDisplaySystem = () => {
         'Content-Type': 'application/json'
       };
 
-      // Fetch current service and queue simultaneously
-      const [currentResponse, queueResponse] = await Promise.all([
-        fetch(config.API_ENDPOINTS.TV_CURRENT, { headers }),
-        fetch(config.API_ENDPOINTS.TV_QUEUE, { headers })
-      ]);
+      // Update to fetch multiple services
+      const response = await fetch(`${config.API_BASE_URL}/api/tv/current-services`, { headers });
 
-      if (!currentResponse.ok || !queueResponse.ok) {
+      if (!response.ok) {
         throw new Error('Failed to fetch data');
       }
 
-      const currentData = await currentResponse.json();
-      const queueData = await queueResponse.json();
-
-      setCurrentService(currentData);
-      setQueue(queueData || []);
+      const servicesData = await response.json();
+      setCurrentServices(Array.isArray(servicesData) ? servicesData : []);
       setError(null);
     } catch (err) {
       console.error('Error fetching TV data:', err);
@@ -90,57 +67,57 @@ const TVDisplaySystem = () => {
 
   // Auto-switch between service and advertising views
   useEffect(() => {
+    const mainViewTime = 10000; // 10 seconds for main page
+    const otherViewTime = 5000; // 5 seconds for others
+    
     const switchTimer = setInterval(() => {
-      if (currentService) {
-        // If there's an active service, show it 70% of the time
-        setCurrentView(prev => prev === 'service' ? 'advertising' : 'service');
-      } else {
-        // If no active service, show advertising more often
-        setCurrentView('advertising');
-      }
-    }, currentService ? 10000 : 8000); // 10s with service, 8s without
+      setCurrentView(prev => prev === 'service' ? 'advertising' : 'service');
+    }, currentView === 'service' ? mainViewTime : otherViewTime);
 
     return () => clearInterval(switchTimer);
-  }, [currentService]);
+  }, [currentView]);
 
-  // Advertisement rotation
+  // Breaking news rotation
   useEffect(() => {
-    if (currentView !== 'advertising') return;
+    const newsTimer = setInterval(() => {
+      setCurrentNewsIndex(prev => (prev + 1) % breakingNews.length);
+    }, 4000); // Change news every 4 seconds
 
-    const adTimer = setInterval(() => {
-      setCurrentAdIndex(prev => (prev + 1) % advertisements.length);
-    }, advertisements[currentAdIndex]?.duration || 8000);
-
-    return () => clearInterval(adTimer);
-  }, [currentView, currentAdIndex]);
+    return () => clearInterval(newsTimer);
+  }, []);
 
   const getServiceTypeLabel = (type) => {
     const types = {
       'lavage-ville': 'Lavage Ville',
       'interieur': 'Intérieur',
       'exterieur': 'Extérieur',
-      'complet-premium': 'Complet Premium',
+      'complet-premium': 'Premium',
       'complet': 'Complet'
     };
     return types[type] || type;
   };
 
+  // Fixed timer calculation - calculate elapsed minutes since service started
   const getTimeElapsed = (startTime) => {
     if (!startTime) return 0;
-    const elapsed = Math.floor((Date.now() - new Date(startTime)) / (1000 * 60));
-    return elapsed;
+    const now = new Date();
+    const start = new Date(startTime);
+    const elapsed = Math.floor((now - start) / (1000 * 60));
+    return Math.max(0, elapsed);
   };
 
+  // Estimate remaining time based on service type and elapsed time
   const getEstimatedTimeRemaining = (serviceType, elapsed) => {
     const estimatedDurations = {
-      'lavage-ville': 30,
-      'interieur': 25,
+      'lavage-ville': 25,
+      'interieur': 30,
       'exterieur': 20,
       'complet-premium': 45,
       'complet': 35
     };
-    const estimated = estimatedDurations[serviceType] || 30;
-    return Math.max(0, estimated - elapsed);
+    const totalEstimated = estimatedDurations[serviceType] || 30;
+    const remaining = Math.max(0, totalEstimated - elapsed);
+    return remaining;
   };
 
   const formatTime = (date) => {
@@ -151,147 +128,192 @@ const TVDisplaySystem = () => {
   };
 
   const ServiceDisplay = () => (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="flex justify-between items-center p-8 border-b border-gray-200">
-        <div className="flex items-center space-x-6">
-          <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain" />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">JOUINI LAVAGE AUTO</h1>
-            <p className="text-gray-500">Système de gestion en temps réel</p>
+      <div className="bg-white shadow-sm border-b">
+        <div className="flex justify-between items-center p-6">
+          <div className="flex items-center space-x-6">
+            <div className="w-16 h-16 bg-slate-900 rounded-lg flex items-center justify-center">
+              <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain filter brightness-0 invert" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">JOUINI LAVAGE AUTO</h1>
+              <p className="text-slate-600">Système de gestion professionnel</p>
+            </div>
           </div>
-        </div>
-        <div className="text-right">
-          <div className="text-3xl font-mono font-bold text-gray-900">
-            {currentTime.toLocaleTimeString('fr-FR')}
-          </div>
-          <div className="text-sm text-gray-500">
-            {currentTime.toLocaleDateString('fr-FR', { 
-              weekday: 'long', 
-              day: 'numeric', 
-              month: 'long' 
-            })}
+          <div className="text-right">
+            <div className="text-3xl font-mono font-bold text-slate-900">
+              {currentTime.toLocaleTimeString('fr-FR')}
+            </div>
+            <div className="text-sm text-slate-500">
+              {currentTime.toLocaleDateString('fr-FR', { 
+                weekday: 'long', 
+                day: 'numeric', 
+                month: 'long' 
+              })}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Current Service */}
-      <div className="p-8">
-        <h2 className="text-xl font-semibold text-gray-700 mb-6">SERVICE EN COURS</h2>
-        
-        {currentService ? (
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-6 mb-8">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <div className="text-4xl font-bold text-blue-900 mb-2">
-                  {currentService.immatriculation}
-                </div>
-                <div className="text-lg text-gray-700 mb-2">
-                  {currentService.vehicle_brand} {currentService.vehicle_model}
-                </div>
-                <div className="text-gray-600">
-                  Couleur: {currentService.vehicle_color} • Service: {getServiceTypeLabel(currentService.service_type)}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-green-600">
-                  {getEstimatedTimeRemaining(currentService.service_type, getTimeElapsed(currentService.start_time))} min
-                </div>
-                <div className="text-sm text-gray-500">temps restant estimé</div>
-                <div className="text-sm text-gray-600 mt-2">
-                  Début: {formatTime(currentService.start_time)}
-                </div>
-              </div>
+      {/* Breaking News Bar */}
+      <div className="bg-blue-600 text-white py-2 px-6 overflow-hidden">
+        <div className="flex items-center space-x-4">
+          <AlertCircle className="w-5 h-5 text-blue-200 flex-shrink-0" />
+          <div className="animate-pulse font-semibold text-sm">ACTUALITÉS</div>
+          <div className="flex-1 overflow-hidden">
+            <div className="animate-scroll whitespace-nowrap">
+              {breakingNews[currentNewsIndex]}
             </div>
-            
-            {Array.isArray(currentService.staff) && currentService.staff.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-blue-200">
-                <div className="text-sm text-gray-600">
-                  Équipe: <span className="font-medium">{currentService.staff.join(', ')}</span>
-                </div>
-              </div>
-            )}
           </div>
-        ) : (
-          <div className="bg-gray-50 border border-gray-200 p-8 text-center mb-8">
-            <div className="text-gray-400 text-6xl mb-4">🚗</div>
-            <div className="text-xl text-gray-600">Aucun service en cours</div>
-            <div className="text-gray-500">Station disponible</div>
-          </div>
-        )}
+        </div>
+      </div>
 
-        {/* Queue */}
-        <h2 className="text-xl font-semibold text-gray-700 mb-6">
-          FILE D'ATTENTE ({queue.length})
-        </h2>
+      {/* Services en cours */}
+      <div className="p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <Wrench className="w-6 h-6 text-blue-600" />
+          <h2 className="text-xl font-semibold text-slate-800">
+            SERVICES EN COURS ({currentServices.length})
+          </h2>
+        </div>
         
-        {queue.length > 0 ? (
-          <div className="space-y-4">
-            {queue.slice(0, 8).map((service, index) => (
-              <div key={service.id} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded">
-                <div className="flex items-center space-x-4">
-                  <div className="w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                    {index + 1}
+        {currentServices.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {currentServices.map((service, index) => {
+              const elapsed = getTimeElapsed(service.start_time);
+              const remaining = getEstimatedTimeRemaining(service.service_type, elapsed);
+              
+              return (
+                <div key={service.id} className="bg-white border-l-4 border-blue-500 shadow-sm p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="text-2xl font-bold text-slate-900 mb-1">
+                        {service.immatriculation}
+                      </div>
+                      <div className="text-slate-600">
+                        {service.vehicle_brand} {service.vehicle_model}
+                      </div>
+                      <div className="text-sm text-slate-500 mt-1">
+                        {service.vehicle_color} • {getServiceTypeLabel(service.service_type)}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-green-600">
+                        {remaining} min
+                      </div>
+                      <div className="text-xs text-slate-500">restantes</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-bold text-gray-900">{service.immatriculation}</div>
-                    <div className="text-sm text-gray-600">
-                      {service.vehicle_brand} {service.vehicle_model} • {service.vehicle_color}
+                  
+                  <div className="flex justify-between items-center text-sm">
+                    <div className="flex items-center space-x-2 text-slate-600">
+                      <Clock className="w-4 h-4" />
+                      <span>Début: {formatTime(service.start_time)}</span>
+                      <span>• {elapsed} min écoulées</span>
+                    </div>
+                    {Array.isArray(service.staff) && service.staff.length > 0 && (
+                      <div className="flex items-center space-x-2 text-slate-600">
+                        <Users className="w-4 h-4" />
+                        <span>{service.staff.join(', ')}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Progress bar */}
+                  <div className="mt-4">
+                    <div className="w-full bg-slate-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-1000"
+                        style={{ 
+                          width: `${Math.min(100, Math.max(10, (elapsed / (elapsed + remaining)) * 100))}%` 
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-700">
-                    {getServiceTypeLabel(service.service_type)}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Ajouté: {formatTime(service.created_at)}
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
-          <div className="bg-gray-50 border border-gray-200 p-8 text-center">
-            <div className="text-gray-400 text-4xl mb-4">📋</div>
-            <div className="text-lg text-gray-600">Aucun véhicule en attente</div>
+          <div className="bg-white border border-slate-200 p-12 text-center rounded-lg">
+            <Car className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+            <div className="text-xl text-slate-600 mb-2">Aucun service en cours</div>
+            <div className="text-slate-500">Toutes les stations sont disponibles</div>
           </div>
         )}
       </div>
+
+      <style jsx>{`
+        @keyframes scroll {
+          0% { transform: translateX(100%); }
+          100% { transform: translateX(-100%); }
+        }
+        .animate-scroll {
+          animation: scroll 15s linear infinite;
+        }
+      `}</style>
     </div>
   );
 
   const AdvertisingDisplay = () => (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-700 text-white flex items-center justify-center">
-      <div className="text-center">
-        <img src="/logo.png" alt="Logo" className="w-32 h-32 mx-auto mb-8 opacity-90" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-blue-900 text-white flex items-center justify-center">
+      <div className="text-center max-w-4xl mx-auto p-8">
+        <div className="w-32 h-32 bg-white rounded-2xl flex items-center justify-center mx-auto mb-8">
+          <img src="/logo.png" alt="Logo" className="w-24 h-24 object-contain" />
+        </div>
+        
         <h1 className="text-6xl font-bold mb-6">
           JOUINI LAVAGE AUTO
         </h1>
         <p className="text-2xl text-blue-200 mb-8">
-          Service Professionnel • Qualité Garantie
+          Excellence • Professionnalisme • Confiance
         </p>
         
-        {currentService && (
-          <div className="absolute bottom-8 right-8 bg-black/30 backdrop-blur-sm rounded-lg p-4">
-            <div className="text-sm text-blue-200">Service en cours:</div>
-            <div className="font-bold">{currentService.immatriculation}</div>
-            <div className="text-sm text-green-300">
-              {getEstimatedTimeRemaining(currentService.service_type, getTimeElapsed(currentService.start_time))} min restantes
-            </div>
+        <div className="grid grid-cols-3 gap-8 text-center">
+          <div>
+            <Car className="w-12 h-12 mx-auto mb-4 text-blue-300" />
+            <div className="font-semibold">Service Rapide</div>
+            <div className="text-sm text-blue-200">15-45 minutes</div>
           </div>
-        )}
+          <div>
+            <Wrench className="w-12 h-12 mx-auto mb-4 text-blue-300" />
+            <div className="font-semibold">Équipe Experte</div>
+            <div className="text-sm text-blue-200">Personnel qualifié</div>
+          </div>
+          <div>
+            <AlertCircle className="w-12 h-12 mx-auto mb-4 text-blue-300" />
+            <div className="font-semibold">Qualité Garantie</div>
+            <div className="text-sm text-blue-200">Satisfaction 100%</div>
+          </div>
+        </div>
       </div>
+
+      {currentServices.length > 0 && (
+        <div className="absolute bottom-6 right-6 bg-black/30 backdrop-blur-sm rounded-lg p-4">
+          <div className="text-sm text-blue-200 mb-1">
+            {currentServices.length} service{currentServices.length > 1 ? 's' : ''} en cours
+          </div>
+          {currentServices.slice(0, 2).map(service => (
+            <div key={service.id} className="text-sm">
+              <span className="font-medium">{service.immatriculation}</span>
+              <span className="text-green-300 ml-2">
+                {getEstimatedTimeRemaining(service.service_type, getTimeElapsed(service.start_time))} min
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
   // Loading screen
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
         <div className="text-center">
-          <Car className="w-16 h-16 mx-auto mb-4 animate-pulse text-cyan-400" />
-          <div className="text-2xl">Chargement du système TV...</div>
+          <Tv className="w-16 h-16 mx-auto mb-4 animate-pulse text-blue-400" />
+          <div className="text-xl">Initialisation du système TV...</div>
         </div>
       </div>
     );
@@ -302,12 +324,12 @@ const TVDisplaySystem = () => {
     return (
       <div className="min-h-screen bg-red-900 text-white flex items-center justify-center">
         <div className="text-center">
-          <div className="text-4xl mb-4">❌</div>
+          <AlertCircle className="w-16 h-16 mx-auto mb-4" />
           <div className="text-2xl mb-2">Erreur de connexion</div>
-          <div className="text-lg">{error}</div>
+          <div className="text-lg mb-4">{error}</div>
           <button
             onClick={fetchTVData}
-            className="mt-4 px-6 py-2 bg-white text-red-900 rounded-lg hover:bg-gray-100"
+            className="px-6 py-2 bg-white text-red-900 rounded-lg hover:bg-gray-100 font-semibold"
           >
             Réessayer
           </button>
@@ -316,7 +338,6 @@ const TVDisplaySystem = () => {
     );
   }
 
-  // Main display
   return (
     <div className="relative">
       {currentView === 'service' ? <ServiceDisplay /> : <AdvertisingDisplay />}
