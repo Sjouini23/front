@@ -56,11 +56,7 @@ export const useServices = (addNotification) => {
       
       // ✅ USE YOUR SAFE TRANSFORMER - this works!
       const transformedServices = transformBackendResponse(backendServices);
-      console.log('✅ Transformed services:', transformedServices);
-      console.log('📥 SETTING SERVICES TO STATE');
-console.log('📥 Raw backend services:', backendServices.length);
-console.log('📥 Transformed services:', transformedServices.length);
-console.log('📥 All license plates:', transformedServices.map(s => s.licensePlate));
+
       setServices(transformedServices);
       
       if (transformedServices.length > 0) {
@@ -126,8 +122,6 @@ console.log('📥 All license plates:', transformedServices.map(s => s.licensePl
 
   // ✅ KEEP ALL YOUR SERVICE FUNCTIONS
   const handleCreateService = useCallback(async (serviceData) => {
-    console.log('🚀 Creating service via API...', serviceData);
-    
     try {
       const validation = validateServiceBeforeSend(serviceData);
       
@@ -174,7 +168,14 @@ console.log('📥 All license plates:', transformedServices.map(s => s.licensePl
 
         await fetchServices();
         addNotification('✅ Service Modifié', `Service ${safeData.licensePlate} mis à jour`, 'success');
-        
+        console.log('🔄 REFETCH COMPLETED - checking if new car appears');
+console.log('🔄 Total services in state:', services.length);
+console.log('🔄 Looking for new car:', serviceData.licensePlate);
+const newCar = services.find(s => s.licensePlate === serviceData.licensePlate);
+console.log('🔄 Found new car in state:', newCar ? 'YES ✅' : 'NO ❌');
+if (newCar) {
+  console.log('🔄 New car details:', newCar);
+}
       } else {
         // CREATE new service
         const response = await fetch(config.API_ENDPOINTS.WASHES, {
