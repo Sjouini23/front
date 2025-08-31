@@ -57,7 +57,10 @@ export const useServices = (addNotification) => {
       // ✅ USE YOUR SAFE TRANSFORMER - this works!
       const transformedServices = transformBackendResponse(backendServices);
       console.log('✅ Transformed services:', transformedServices);
-      
+      console.log('📥 SETTING SERVICES TO STATE');
+console.log('📥 Raw backend services:', backendServices.length);
+console.log('📥 Transformed services:', transformedServices.length);
+console.log('📥 All license plates:', transformedServices.map(s => s.licensePlate));
       setServices(transformedServices);
       
       if (transformedServices.length > 0) {
@@ -203,6 +206,11 @@ console.log('🚀 Sending date to server:', {
   createdAt: safeData.createdAt,
   licensePlate: safeData.licensePlate
 });
+console.log('🚗 NEW CAR CREATION STARTED');
+console.log('🚗 Service data received:', serviceData);
+console.log('🚗 Service date:', serviceData.date);
+console.log('🚗 Service isActive:', serviceData.isActive);
+console.log('🚗 Current time:', new Date().toString());
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
@@ -211,7 +219,14 @@ console.log('🚀 Sending date to server:', {
         await fetchServices();
         addNotification('✅ Service Créé', `Nouveau service ${safeData.licensePlate}`, 'success');
       }
-      
+      console.log('🔄 REFETCH COMPLETED - checking if new car appears');
+console.log('🔄 Total services in state:', services.length);
+console.log('🔄 Looking for new car:', serviceData.licensePlate);
+const newCar = services.find(s => s.licensePlate === serviceData.licensePlate);
+console.log('🔄 Found new car in state:', newCar ? 'YES ✅' : 'NO ❌');
+if (newCar) {
+  console.log('🔄 New car details:', newCar);
+}
       setShowServiceForm(false);
       setEditingService(null);
       
