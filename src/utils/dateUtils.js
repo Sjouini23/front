@@ -14,28 +14,31 @@ export const getTodayLocalDate = () => {
 };
 
 export const isDateBeforeToday = (dateString) => { 
-  try {
-    if (!dateString) return false;
-    
-    const today = getTodayLocalDate();
-    const serviceDate = parseLocalDate(dateString);
-    
-    if (!serviceDate || !today || isNaN(serviceDate.getTime()) || isNaN(today.getTime())) {
-      return false; // If date parsing fails, assume it's NOT in the past
-    }
-    
-    // 🔧 KEY FIX: Only consider it "before today" if it's clearly in the past
-    const todayTime = today.getTime();
-    const serviceDateTime = serviceDate.getTime();
-    
-    // Consider dates more than 12 hours ago as "past" to handle timezone edge cases
-    const twelveHoursInMs = 12 * 60 * 60 * 1000;
-    
-    return (todayTime - serviceDateTime) > twelveHoursInMs;
-  } catch (error) {
-    console.error('isDateBeforeToday error:', error);
-    return false; // Default to NOT hiding services if there's an error
+  console.log('🔍 DEBUG isDateBeforeToday called with:', dateString);
+  
+  if (!dateString) {
+    console.log('❌ No dateString provided, returning false');
+    return false;
   }
+  
+  const today = getTodayLocalDate();
+  const serviceDate = parseLocalDate(dateString);
+  
+  console.log('📅 Today (local):', today);
+  console.log('📅 Service date:', serviceDate);
+  console.log('⏰ Current time:', new Date().toString());
+  console.log('⏰ Current hour:', new Date().getHours());
+  
+  if (!serviceDate) {
+    console.log('❌ Service date parsing failed, returning false');
+    return false;
+  }
+  
+  const result = serviceDate < today;
+  console.log('🎯 RESULT: serviceDate < today =', result);
+  console.log('🎯 This means car will be', result ? 'HIDDEN ❌' : 'VISIBLE ✅');
+  
+  return result;
 };
 
 export const isDateToday = (dateString) => {
@@ -64,5 +67,10 @@ export const getCurrentDateString = () => {
   const year = today.getFullYear();
   const month = (today.getMonth() + 1).toString().padStart(2, '0');
   const day = today.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const dateString = `${year}-${month}-${day}`;
+  
+  console.log('🗓️ getCurrentDateString generated:', dateString);
+  console.log('⏰ At time:', today.toString());
+  
+  return dateString;
 };

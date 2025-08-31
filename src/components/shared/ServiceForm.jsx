@@ -406,7 +406,12 @@ const AppleLuxuryServiceForm = React.memo(({
   totalPrice: calculatePrice(),
   priceAdjustment: parseFloat(formData.priceAdjustment) || 0,
   // 🚨 FIX: Don't force today's date if user selected a specific date
-  date: formData.date || getCurrentDateString(),
+ date: (() => {
+  const finalDate = formData.date || getCurrentDateString();
+  console.log('🚗 NEW CAR: Setting date to:', finalDate);
+  console.log('🚗 NEW CAR: formData.date was:', formData.date);
+  return finalDate;
+})(),
   createdAt: existingService?.createdAt || new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 completed: existingService?.completed || isDateBeforeToday(formData.date || getCurrentDateString()),  motoDetails: formData.motoDetails || {}
