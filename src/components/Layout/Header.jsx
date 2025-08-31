@@ -76,15 +76,13 @@ const Header = ({ theme, currentTime, serviceData }) => {
             {/* Export Luxury Button - WITH DEBUG */}
             <button
               onClick={() => {
-                console.log('🔍 Export button clicked!');
-                console.log('🔍 serviceData:', serviceData);
-                console.log('🔍 exportToCSV function:', serviceData?.exportToCSV);
+
                 
                 if (serviceData?.exportToCSV) {
-                  console.log('✅ Calling exportToCSV...');
+                
                   try {
                     serviceData.exportToCSV();
-                    console.log('✅ exportToCSV called successfully');
+
                   } catch (error) {
                     console.error('❌ Error calling exportToCSV:', error);
                   }
@@ -103,11 +101,10 @@ const Header = ({ theme, currentTime, serviceData }) => {
             {/* Nouveau Service Button */}
             <button
               onClick={() => {
-                console.log('🔍 Nouveau Service button clicked!');
-                console.log('🔍 setShowServiceForm:', serviceData?.setShowServiceForm);
+
                 
                 if (serviceData?.setShowServiceForm) {
-                  console.log('✅ Calling setShowServiceForm(true)...');
+
                   serviceData.setShowServiceForm(true);
                 } else {
                   console.error('❌ setShowServiceForm function not found!');

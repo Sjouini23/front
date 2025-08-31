@@ -202,7 +202,7 @@ export const transformBackendResponse = (backendServices) => {
       return [];
     }
 
-    console.log('🔄 Transforming backend data:', backendServices.length, 'services');
+
     
     const transformed = backendServices
       .map((service, index) => {
@@ -222,7 +222,7 @@ export const transformBackendResponse = (backendServices) => {
       })
       .filter(service => service !== null);
 
-    console.log('✅ Successfully transformed:', transformed.length, 'services');
+  
     
     // Log any missing data for debugging
     const missingData = transformed.filter(s => s.totalPrice === 0);

@@ -324,9 +324,7 @@ const formatDuration = (startTime, endTime = null, totalDuration = null) => {
                       {service.isActive && !isPastDate && (
                         <button
   onClick={() => {
-    console.log('🟢 Green button clicked!');
-    console.log('🆔 Service ID:', service.id);
-    console.log('🌐 About to call finish for service:', service.id);
+
     onFinishService(service.id);
   }}
   className="p-2 rounded-lg bg-green-500/20 text-green-600 hover:bg-green-500/30 transition-all duration-300 hover:scale-110 shadow-md focus:outline-none focus:ring-1 focus:ring-green-500/50 hover:shadow-lg"

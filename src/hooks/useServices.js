@@ -37,8 +37,7 @@ export const useServices = (addNotification) => {
         return;
       }
       
-      console.log('🔄 Fetching services from:', config.API_ENDPOINTS.WASHES);
-      
+     
       const response = await fetch(config.API_ENDPOINTS.WASHES, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -52,7 +51,7 @@ export const useServices = (addNotification) => {
       }
 
       const backendServices = await response.json();
-      console.log('📥 Raw backend data:', backendServices);
+
       
       // ✅ USE YOUR SAFE TRANSFORMER - this works!
       const transformedServices = transformBackendResponse(backendServices);
@@ -168,14 +167,7 @@ export const useServices = (addNotification) => {
 
         await fetchServices();
         addNotification('✅ Service Modifié', `Service ${safeData.licensePlate} mis à jour`, 'success');
-        console.log('🔄 REFETCH COMPLETED - checking if new car appears');
-console.log('🔄 Total services in state:', services.length);
-console.log('🔄 Looking for new car:', serviceData.licensePlate);
-const newCar = services.find(s => s.licensePlate === serviceData.licensePlate);
-console.log('🔄 Found new car in state:', newCar ? 'YES ✅' : 'NO ❌');
-if (newCar) {
-  console.log('🔄 New car details:', newCar);
-}
+        
       } else {
         // CREATE new service
         const response = await fetch(config.API_ENDPOINTS.WASHES, {
@@ -202,16 +194,8 @@ if (newCar) {
            
           })
         });
-console.log('🚀 Sending date to server:', {
-  date: safeData.date,
-  createdAt: safeData.createdAt,
-  licensePlate: safeData.licensePlate
-});
-console.log('🚗 NEW CAR CREATION STARTED');
-console.log('🚗 Service data received:', serviceData);
-console.log('🚗 Service date:', serviceData.date);
-console.log('🚗 Service isActive:', serviceData.isActive);
-console.log('🚗 Current time:', new Date().toString());
+
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
@@ -220,14 +204,7 @@ console.log('🚗 Current time:', new Date().toString());
         await fetchServices();
         addNotification('✅ Service Créé', `Nouveau service ${safeData.licensePlate}`, 'success');
       }
-      console.log('🔄 REFETCH COMPLETED - checking if new car appears');
-console.log('🔄 Total services in state:', services.length);
-console.log('🔄 Looking for new car:', serviceData.licensePlate);
-const newCar = services.find(s => s.licensePlate === serviceData.licensePlate);
-console.log('🔄 Found new car in state:', newCar ? 'YES ✅' : 'NO ❌');
-if (newCar) {
-  console.log('🔄 New car details:', newCar);
-}
+    
       setShowServiceForm(false);
       setEditingService(null);
       
@@ -294,7 +271,7 @@ if (newCar) {
   }, []);
 // ✅ ADD EXPORT FUNCTION
 const exportToCSV = useCallback(() => {
-  console.log('📊 Exporting services to CSV...');
+ 
   
   try {
     if (!filteredServices || filteredServices.length === 0) {
@@ -343,7 +320,7 @@ const exportToCSV = useCallback(() => {
 // Replace the finishService function in useServices.js (around line 180-210):
 
 const finishService = useCallback(async (serviceId) => {
-  console.log('🏁 Finishing service:', serviceId);
+
   
   try {
     const token = localStorage.getItem('auth_token');

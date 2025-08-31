@@ -37,17 +37,14 @@ const ServicesList = ({
   // Calculate statistics
    const totalServices     = safeFiltered.length;
    const activeServices = safeFiltered.filter(s => {
-  console.log('🔍 FILTERING SERVICE:', s.licensePlate, 'Date:', s.date);
+
   const isActive = s.isActive;
   const notFinished = !s.timeFinished;
   const notPastDate = !isDateBeforeToday(s.date);
   
-  console.log('  ✅ isActive:', isActive);
-  console.log('  ✅ notFinished:', notFinished);  
-  console.log('  ✅ notPastDate:', notPastDate);
-  
+ 
   const shouldShow = isActive && notFinished && notPastDate;
-  console.log('  🎯 FINAL RESULT for', s.licensePlate, ':', shouldShow ? 'SHOW ✅' : 'HIDE ❌');
+
   
   return shouldShow;
 }).length;

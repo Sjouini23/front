@@ -13,7 +13,7 @@ function PhotoUpload() {
     if (file) {
       setSelectedFile(file);
       setMessage(`Selected: ${file.name}`);
-      console.log('File selected:', file);
+      
     }
   };
 
@@ -37,9 +37,7 @@ function PhotoUpload() {
       const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
       const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
 
-      console.log('Uploading to Cloudinary...');
-      console.log('Cloud name:', cloudName);
-      console.log('Upload preset:', process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET);
+
 
       const response = await fetch(uploadUrl, {
         method: 'POST',
@@ -47,12 +45,12 @@ function PhotoUpload() {
       });
 
       const result = await response.json();
-      console.log('Cloudinary response:', result);
+      
 
       if (response.ok) {
         setUploadedUrl(result.secure_url);
         setMessage('✅ Upload successful!');
-        console.log('SUCCESS! Image URL:', result.secure_url);
+      
       } else {
         setMessage(`❌ Upload failed: ${result.error?.message || 'Unknown error'}`);
         console.error('Upload failed:', result);

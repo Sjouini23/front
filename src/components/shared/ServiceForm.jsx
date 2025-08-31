@@ -393,10 +393,7 @@ const AppleLuxuryServiceForm = React.memo(({
       
       // Initialize timer data for new services
       const timerData = !existingService ? initializeTimer() : {};
-      console.log('🆕 CREATING NEW CAR AT NIGHT');
-console.log('🆕 Current time:', new Date().toString());
-console.log('🆕 formData.date:', formData.date);
-console.log('🆕 getCurrentDateString():', getCurrentDateString());
+
       // Sanitize form data
      const sanitizedData = {
   ...formData,
@@ -418,9 +415,7 @@ console.log('🆕 getCurrentDateString():', getCurrentDateString());
   updatedAt: new Date().toISOString(),
 completed: existingService?.completed || isDateBeforeToday(formData.date || getCurrentDateString()),  motoDetails: formData.motoDetails || {}
 };
-console.log('🆕 COMPLETE NEW CAR DATA:', sanitizedData);
-console.log('🆕 NEW CAR isActive:', sanitizedData.isActive);
-console.log('🆕 NEW CAR date:', sanitizedData.date);
+
       // Simulate async operation
       // Get authentication token
 onSubmit(sanitizedData);
