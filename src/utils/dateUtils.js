@@ -14,14 +14,28 @@ export const getTodayLocalDate = () => {
 };
 
 export const isDateBeforeToday = (dateString) => { 
-  if (!dateString) return false;
-  
-  const today = getTodayLocalDate();
-  const serviceDate = parseLocalDate(dateString);
-  
-  if (!serviceDate) return false;
-  
-  return serviceDate < today;
+  try {
+    if (!dateString) return false;
+    
+    const today = getTodayLocalDate();
+    const serviceDate = parseLocalDate(dateString);
+    
+    if (!serviceDate || !today || isNaN(serviceDate.getTime()) || isNaN(today.getTime())) {
+      return false; // If date parsing fails, assume it's NOT in the past
+    }
+    
+    // 🔧 KEY FIX: Only consider it "before today" if it's clearly in the past
+    const todayTime = today.getTime();
+    const serviceDateTime = serviceDate.getTime();
+    
+    // Consider dates more than 12 hours ago as "past" to handle timezone edge cases
+    const twelveHoursInMs = 12 * 60 * 60 * 1000;
+    
+    return (todayTime - serviceDateTime) > twelveHoursInMs;
+  } catch (error) {
+    console.error('isDateBeforeToday error:', error);
+    return false; // Default to NOT hiding services if there's an error
+  }
 };
 
 export const isDateToday = (dateString) => {
