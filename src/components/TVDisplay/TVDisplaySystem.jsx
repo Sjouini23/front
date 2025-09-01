@@ -1,13 +1,12 @@
-// FIXED TVDisplaySystem.jsx - All issues resolved
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { Clock, Car, Tv, AlertCircle, Users, Wrench, Zap, Star, Award, Activity, Timer, CheckCircle, Play } from 'lucide-react';
+import { Clock, Car, Tv, AlertCircle, Users, Wrench, Zap, Star, Award, Activity, Timer, CheckCircle, Play, Trophy } from 'lucide-react';
 import config from '../../config.local';
 
 const TVDisplaySystem = () => {
   const [currentView, setCurrentView] = useState('service');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentServices, setCurrentServices] = useState([]);
+  const [completedServices, setCompletedServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewTransition, setViewTransition] = useState(false);
@@ -72,14 +71,20 @@ const TVDisplaySystem = () => {
         'Content-Type': 'application/json'
       };
 
-      const response = await fetch(`${config.API_BASE_URL}/api/tv/current-services`, { headers });
+      // Fetch active services
+      const activeResponse = await fetch(`${config.API_BASE_URL}/api/tv/current-services`, { headers });
+      // Fetch completed services for today
+      const completedResponse = await fetch(`${config.API_BASE_URL}/api/washes?status=completed&date=today`, { headers });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch data');
+      if (!activeResponse.ok) {
+        throw new Error('Failed to fetch active services');
       }
 
-      const servicesData = await response.json();
-      setCurrentServices(Array.isArray(servicesData) ? servicesData : []);
+      const activeServicesData = await activeResponse.json();
+      const completedServicesData = completedResponse.ok ? await completedResponse.json() : [];
+      
+      setCurrentServices(Array.isArray(activeServicesData) ? activeServicesData : []);
+      setCompletedServices(Array.isArray(completedServicesData) ? completedServicesData : []);
       setError(null);
     } catch (err) {
       console.error('Error fetching TV data:', err);
@@ -96,18 +101,25 @@ const TVDisplaySystem = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Enhanced auto-switch with smooth transitions
+  // Enhanced auto-switch with smooth transitions - Updated to include completion view
   useEffect(() => {
-    const mainViewTime = 10000; // 10 seconds for main page
-    const otherViewTime = 5000; // 5 seconds for others
+    const mainViewTime = 15000; // 15 seconds for service page
+    const otherViewTime = 8000;  // 8 seconds for others
+    const completionViewTime = 10000; // 10 seconds for completion page
     
     const switchTimer = setInterval(() => {
       setViewTransition(true);
       setTimeout(() => {
-        setCurrentView(prev => prev === 'service' ? 'advertising' : 'service');
+        setCurrentView(prev => {
+          // Cycle through: service -> completion -> advertising -> service
+          if (prev === 'service') return 'completion';
+          if (prev === 'completion') return 'advertising';
+          return 'service';
+        });
         setViewTransition(false);
       }, 300);
-    }, currentView === 'service' ? mainViewTime : otherViewTime);
+    }, currentView === 'service' ? mainViewTime : 
+       currentView === 'completion' ? completionViewTime : otherViewTime);
 
     return () => clearInterval(switchTimer);
   }, [currentView]);
@@ -132,7 +144,7 @@ const TVDisplaySystem = () => {
     return types[type] || type;
   };
 
-  // 🔥 FIXED: Correct time elapsed calculation
+  // 🔧 FIXED: Correct time elapsed calculation in minutes
   const getTimeElapsed = (startTime) => {
     if (!startTime) return 0;
     const now = new Date();
@@ -141,50 +153,40 @@ const TVDisplaySystem = () => {
     return Math.max(0, elapsed);
   };
 
-  // 🔥 FIXED: Better estimated time remaining calculation
+  // 🔧 FIXED: Correct service durations (updated lavage-ville to 45 minutes)
   const getEstimatedTimeRemaining = (serviceType, elapsed) => {
     const estimatedDurations = {
-      'lavage-ville': 25,
+      'lavage-ville': 45,        // FIXED: Changed from 25 to 45 minutes
       'interieur': 30,
       'exterieur': 20,
-      'complet-premium': 45,
-      'complet': 35
+      'complet-premium': 60,     // Premium should be longer
+      'complet': 40
     };
-    const totalEstimated = estimatedDurations[serviceType] || 30;
-    
-    // 🔥 FIX: Don't let remaining go below 0 abruptly
+    const totalEstimated = estimatedDurations[serviceType] || 35;
     const remaining = Math.max(0, totalEstimated - elapsed);
-    
-    // If service is running longer than expected, show "En finition" status
-    if (elapsed > totalEstimated) {
-      return { remaining: 0, status: 'finishing' };
-    }
-    
-    return { remaining, status: 'normal' };
+    return remaining;
   };
 
-  // 🔥 FIXED: Correct progress calculation that never shows false 100%
-  const getServiceProgress = (serviceType, elapsed) => {
+  // 🔧 FIXED: Correct progress calculation
+  const calculateProgress = (serviceType, elapsed) => {
     const estimatedDurations = {
-      'lavage-ville': 25,
+      'lavage-ville': 45,
       'interieur': 30,
       'exterieur': 20,
-      'complet-premium': 45,
-      'complet': 35
+      'complet-premium': 60,
+      'complet': 40
     };
-    const totalEstimated = estimatedDurations[serviceType] || 30;
+    const totalDuration = estimatedDurations[serviceType] || 35;
     
-    // Calculate progress based on estimated total duration
-    let progress = (elapsed / totalEstimated) * 100;
+    // Calculate percentage based on elapsed time vs total expected duration
+    const progressPercent = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
     
-    // Cap progress at 95% until service is manually completed
-    // This prevents the false 100% complete issue
-    progress = Math.min(progress, 95);
+    // After 100%, show "En Finition" status
+    if (elapsed > totalDuration) {
+      return { percent: 100, status: 'finishing', overtime: elapsed - totalDuration };
+    }
     
-    return {
-      progress: Math.max(0, progress),
-      isOvertime: elapsed > totalEstimated
-    };
+    return { percent: progressPercent, status: 'active', overtime: 0 };
   };
 
   const formatTime = (date) => {
@@ -194,82 +196,178 @@ const TVDisplaySystem = () => {
     });
   };
 
-  // 🔥 FIXED: Remove revenue calculation for security
-  // Real-time stats calculation - NO REVENUE EXPOSURE
+  // Real-time stats calculation - REMOVED REVENUE FOR PRIVACY
   const statsData = useMemo(() => {
     const totalServices = currentServices.length;
     const totalElapsed = currentServices.reduce((sum, service) => sum + getTimeElapsed(service.start_time), 0);
     const avgTimePerService = totalServices > 0 ? Math.round(totalElapsed / totalServices) : 0;
+    const completedToday = completedServices.length;
 
-    return { totalServices, totalElapsed, avgTimePerService };
-  }, [currentServices]);
+    return { totalServices, totalElapsed, avgTimePerService, completedToday };
+  }, [currentServices, completedServices]);
 
-  const ServiceDisplay = () => (
-    <div className={`min-h-screen transition-all duration-500 ${viewTransition ? 'scale-95 opacity-50' : 'scale-100 opacity-100'}`}>
-      {/* Animated Background with Particles */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"></div>
+  // 🆕 NEW: Service Completion Display
+  const CompletionDisplay = () => (
+    <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-800 to-teal-700 text-white relative overflow-hidden">
+      {/* Background Animation */}
+      <div className="absolute inset-0">
         {particles.map(particle => (
           <div
             key={particle.id}
-            className="absolute w-1 h-1 bg-blue-300 rounded-full"
+            className="absolute w-1 h-1 bg-green-400 rounded-full animate-pulse"
             style={{
               left: `${particle.x}%`,
               top: `${particle.y}%`,
-              opacity: particle.opacity,
-              transform: `scale(${particle.size})`
+              opacity: particle.opacity
             }}
           />
         ))}
       </div>
 
-      {/* Header with Breaking News */}
-      <div className="relative z-20 bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white p-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="relative z-10 p-8">
+        <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-              <span className="text-sm font-bold uppercase tracking-wider">
-                {breakingNews[currentNewsIndex].category}
-              </span>
+            <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-2xl">
+              <Trophy className="w-8 h-8 text-white" />
             </div>
-            <div className="h-6 w-px bg-red-300"></div>
-            <div className="text-sm font-medium">
-              {breakingNews[currentNewsIndex].text}
+            <div>
+              <h1 className="text-4xl font-black">SERVICES TERMINÉS</h1>
+              <p className="text-green-200 font-medium">Aujourd'hui - {formatTime(new Date())}</p>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xl font-bold">
-              {currentTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-            </div>
-            <div className="text-xs opacity-90">
-              {currentTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </div>
+            <div className="text-3xl font-black">{statsData.completedToday}</div>
+            <div className="text-green-200">Services Complétés</div>
           </div>
         </div>
       </div>
 
-      {/* Stats Bar - REMOVED REVENUE FOR SECURITY */}
-      <div className="relative z-20 bg-white/90 backdrop-blur-sm border-b border-slate-200/50">
-        <div className="max-w-7xl mx-auto px-8 py-4">
-          <div className="grid grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="text-3xl font-black text-slate-800">{statsData.totalServices}</div>
-              <div className="text-xs font-semibold opacity-80 uppercase tracking-wider">Services actifs</div>
+      {/* Completed Services Grid */}
+      <div className="relative z-10 p-8 max-w-7xl mx-auto">
+        {completedServices.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {completedServices.slice(0, 8).map((service, index) => (
+              <div key={service.id || index} className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-green-300/20 shadow-2xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-xs text-green-300 font-bold">
+                    TERMINÉ
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="text-xl font-black text-white">
+                    {service.immatriculation || service.licensePlate}
+                  </div>
+                  
+                  <div className="text-green-200 font-semibold">
+                    {getServiceTypeLabel(service.service_type || service.serviceType)}
+                  </div>
+                  
+                  {(service.vehicle_brand || service.vehicleBrand) && (
+                    <div className="text-sm text-green-300">
+                      {service.vehicle_brand || service.vehicleBrand} {service.vehicle_model || service.vehicleModel || ''}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between pt-2 border-t border-green-300/20">
+                    <div className="text-xs text-green-300">
+                      Durée: {Math.floor((service.duration || 0) / 60)}min
+                    </div>
+                    <div className="text-xs text-green-300">
+                      {formatTime(service.end_time || service.timeFinished)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-12 h-12 text-green-400" />
             </div>
+            <h3 className="text-2xl font-bold text-green-200 mb-4">Aucun Service Terminé</h3>
+            <p className="text-green-300">Les services complétés apparaîtront ici</p>
+          </div>
+        )}
+      </div>
+
+      {/* Footer Stats */}
+      <div className="absolute bottom-0 left-0 right-0 bg-black/20 backdrop-blur-xl p-6">
+        <div className="flex justify-center space-x-8 text-center">
+          <div>
+            <div className="text-2xl font-black text-white">{statsData.completedToday}</div>
+            <div className="text-xs text-green-300 uppercase">Terminés Aujourd'hui</div>
+          </div>
+          <div>
+            <div className="text-2xl font-black text-white">{statsData.totalServices}</div>
+            <div className="text-xs text-green-300 uppercase">En Cours</div>
+          </div>
+          <div>
+            <div className="text-2xl font-black text-white">{statsData.avgTimePerService} min</div>
+            <div className="text-xs text-green-300 uppercase">Temps Moyen</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const ServiceDisplay = () => (
+    <div className={`min-h-screen transition-all duration-500 ${viewTransition ? 'opacity-0 scale-95' : 'opacity-100 scale-100'} bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white relative overflow-hidden`}>
+      {/* Background Animation */}
+      <div className="absolute inset-0">
+        {particles.map(particle => (
+          <div
+            key={particle.id}
+            className="absolute w-1 h-1 bg-blue-400 rounded-full animate-pulse"
+            style={{
+              left: `${particle.x}%`,
+              top: `${particle.y}%`,
+              opacity: particle.opacity
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Breaking News Ticker */}
+      <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-red-600 to-orange-500 py-3 z-20">
+        <div className="flex items-center">
+          <div className="bg-white text-red-600 px-4 py-1 font-black text-sm rounded-r-full mr-4">
+            {breakingNews[currentNewsIndex].category}
+          </div>
+          <div className="text-white font-bold animate-pulse">
+            {breakingNews[currentNewsIndex].text}
+          </div>
+        </div>
+      </div>
+
+      {/* Header with Time and Stats - REMOVED REVENUE */}
+      <div className="relative z-10 pt-16 p-8">
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center space-x-8">
             <div className="text-center">
-              <div className="text-3xl font-black text-slate-800">{statsData.totalElapsed}</div>
-              <div className="text-xs font-semibold opacity-80 uppercase tracking-wider">Minutes totales</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-black text-slate-800">{statsData.avgTimePerService}</div>
-              <div className="text-xs font-semibold opacity-80 uppercase tracking-wider">Temps moyen</div>
+              <div className="text-4xl font-black">{currentTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
+              <div className="text-blue-200 font-semibold">{currentTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
             </div>
           </div>
           
-          <div className="flex items-center justify-center space-x-2 mt-4">
-            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-            <div className="text-sm font-bold uppercase">Système Actif</div>
+          <div className="flex items-center space-x-8 text-right">
+            <div>
+              <div className="text-2xl font-black">{statsData.totalServices}</div>
+              <div className="text-xs font-semibold opacity-80 uppercase tracking-wider">Services Actifs</div>
+            </div>
+            <div>
+              <div className="text-2xl font-black">{statsData.avgTimePerService} min</div>
+              <div className="text-xs font-semibold opacity-80 uppercase tracking-wider">Temps moyen</div>
+            </div>
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+              <div className="text-sm font-bold uppercase">Système Actif</div>
+            </div>
           </div>
         </div>
       </div>
@@ -286,15 +384,15 @@ const TVDisplaySystem = () => {
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-2xl blur opacity-40 animate-pulse"></div>
             </div>
             <div>
-              <h2 className="text-3xl font-black text-slate-800">SERVICES EN COURS</h2>
-              <p className="text-slate-600 font-medium">Suivi en temps réel</p>
+              <h2 className="text-3xl font-black text-white">SERVICES EN COURS</h2>
+              <p className="text-blue-200 font-medium">Suivi en temps réel</p>
             </div>
           </div>
           
           {/* Live indicator */}
           <div className="flex items-center space-x-3">
             <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-bold text-slate-700 uppercase tracking-wider">EN DIRECT</span>
+            <span className="text-sm font-bold text-white uppercase tracking-wider">EN DIRECT</span>
           </div>
         </div>
         
@@ -302,90 +400,90 @@ const TVDisplaySystem = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
             {currentServices.map((service, index) => {
               const elapsed = getTimeElapsed(service.start_time);
-              const timeInfo = getEstimatedTimeRemaining(service.service_type, elapsed);
-              const progressInfo = getServiceProgress(service.service_type, elapsed);
-              const isUrgent = timeInfo.remaining <= 5;
-              const isOvertime = progressInfo.isOvertime;
+              const remaining = getEstimatedTimeRemaining(service.service_type, elapsed);
+              const progressData = calculateProgress(service.service_type, elapsed);  // 🔧 FIXED
+              const isUrgent = remaining <= 5;
+              const isOvertime = progressData.status === 'finishing';
               
               return (
                 <div key={service.id} className="group relative">
                   {/* Dynamic glow based on urgency */}
                   <div className={`absolute -inset-2 rounded-3xl blur-lg transition-all duration-1000 ${
-                    isOvertime 
-                      ? 'bg-gradient-to-r from-purple-400 to-pink-500 opacity-30'
+                    isOvertime
+                      ? 'bg-gradient-to-r from-orange-500/40 to-red-500/40 animate-pulse'
                       : isUrgent 
-                      ? 'bg-gradient-to-r from-orange-400 to-red-500 opacity-30'
-                      : 'bg-gradient-to-r from-blue-400 to-indigo-500 opacity-20'
-                  } group-hover:opacity-50`}></div>
+                      ? 'bg-gradient-to-r from-orange-500/30 to-red-500/30'
+                      : 'bg-gradient-to-r from-blue-500/20 to-purple-500/20'
+                  }`}></div>
                   
-                  {/* Service Card */}
-                  <div className="relative bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-500">
-                    
-                    {/* Status Badge */}
-                    <div className={`absolute top-6 right-6 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                      isOvertime 
-                        ? 'bg-purple-100 text-purple-700'
-                        : isUrgent 
-                        ? 'bg-orange-100 text-orange-700'
-                        : 'bg-blue-100 text-blue-700'
-                    }`}>
-                      {isOvertime ? 'En finition' : isUrgent ? 'Urgent' : 'En cours'}
-                    </div>
-
-                    {/* Vehicle Info Header */}
-                    <div className="mb-8">
-                      <div className="flex items-center space-x-4 mb-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                          isOvertime ? 'bg-purple-100' : isUrgent ? 'bg-orange-100' : 'bg-blue-100'
-                        }`}>
-                          <Car className={`w-6 h-6 ${
-                            isOvertime ? 'text-purple-600' : isUrgent ? 'text-orange-600' : 'text-blue-600'
-                          }`} />
+                  <div className="relative bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
+                    {/* Service Header */}
+                    <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <div className="text-2xl font-black text-slate-900 mb-2">
+                          {service.immatriculation}
                         </div>
-                        <div className="flex-1">
-                          <h3 className="text-xl font-black text-slate-800 uppercase tracking-wider">
-                            {service.immatriculation}
-                          </h3>
-                          <p className="text-slate-600 font-medium">
-                            {service.vehicle_brand} {service.vehicle_model}
-                            {service.vehicle_color && ` • ${service.vehicle_color}`}
-                          </p>
+                        <div className="flex items-center space-x-3">
+                          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-bold">
+                            {getServiceTypeLabel(service.service_type)}
+                          </span>
+                          {(service.vehicle_brand || service.vehicle_model) && (
+                            <span className="text-sm text-slate-600 font-medium">
+                              {service.vehicle_brand} {service.vehicle_model}
+                            </span>
+                          )}
                         </div>
                       </div>
                       
-                      <div className="bg-gradient-to-r from-slate-100 to-slate-50 rounded-xl p-4">
-                        <div className="text-center">
-                          <div className="text-lg font-black text-slate-800 mb-1">
-                            {getServiceTypeLabel(service.service_type)}
-                          </div>
+                      {/* Status Badge */}
+                      <div className={`px-4 py-2 rounded-2xl font-bold text-sm ${
+                        isOvertime
+                          ? 'bg-orange-100 text-orange-800'
+                          : isUrgent
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {isOvertime ? 'EN FINITION' : isUrgent ? 'URGENT' : 'EN COURS'}
+                      </div>
+                    </div>
+
+                    {/* Time Display Grid - FIXED DISPLAY */}
+                    <div className="grid grid-cols-2 gap-6 mb-8">
+                      <div className="text-center">
+                        <div className={`text-3xl font-black mb-2 ${
+                          isOvertime ? 'text-orange-600' : isUrgent ? 'text-red-600' : 'text-blue-600'
+                        }`}>
+                          {elapsed}
+                        </div>
+                        <div className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                          MINUTES ÉCOULÉES
+                        </div>
+                      </div>
+                      
+                      <div className="text-center">
+                        <div className={`text-3xl font-black mb-2 ${
+                          isOvertime 
+                            ? 'text-transparent bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text animate-pulse'
+                            : remaining <= 5
+                            ? 'text-transparent bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text animate-pulse' 
+                            : 'text-transparent bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text'
+                        }`}>
+                          {isOvertime ? `+${progressData.overtime}` : remaining}
+                        </div>
+                        <div className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                          {isOvertime ? 'MINUTES SUPPLÉMENTAIRES' : 'MINUTES RESTANTES'}
                         </div>
                       </div>
                     </div>
 
-                    {/* Time Remaining Display */}
-                    <div className="text-center mb-8">
-                      <div className={`text-4xl font-black mb-2 ${
-                        isOvertime 
-                          ? 'text-transparent bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text' 
-                          : isUrgent 
-                          ? 'text-transparent bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text animate-pulse' 
-                          : 'text-transparent bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text'
-                      }`}>
-                        {isOvertime ? '+ Temps' : `${timeInfo.remaining} min`}
-                      </div>
-                      <div className="text-sm font-bold text-slate-500 uppercase tracking-wider">
-                        {isOvertime ? 'Dépassé' : 'Minutes restantes'}
-                      </div>
-                    </div>
-
-                    {/* 🔥 FIXED: Enhanced Progress Ring - No false 100% */}
+                    {/* Enhanced Progress Ring - FIXED PROGRESS */}
                     <div className="relative w-32 h-32 mx-auto mb-8">
                       <svg className="w-32 h-32 transform -rotate-90">
                         <defs>
                           <linearGradient id={`gradient-${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor={isOvertime ? "#a855f7" : isUrgent ? "#f97316" : "#3b82f6"} />
-                            <stop offset="50%" stopColor={isOvertime ? "#ec4899" : isUrgent ? "#ef4444" : "#6366f1"} />
-                            <stop offset="100%" stopColor={isOvertime ? "#f472b6" : isUrgent ? "#ec4899" : "#8b5cf6"} />
+                            <stop offset="0%" stopColor={isOvertime ? "#f97316" : isUrgent ? "#ef4444" : "#3b82f6"} />
+                            <stop offset="50%" stopColor={isOvertime ? "#ef4444" : isUrgent ? "#ec4899" : "#6366f1"} />
+                            <stop offset="100%" stopColor={isOvertime ? "#ec4899" : isUrgent ? "#8b5cf6" : "#8b5cf6"} />
                           </linearGradient>
                           <filter id={`glow-${index}`}>
                             <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -415,7 +513,7 @@ const TVDisplaySystem = () => {
                           strokeWidth="8"
                           fill="transparent"
                           strokeDasharray={`${2 * Math.PI * 56}`}
-                          strokeDashoffset={`${2 * Math.PI * 56 * (1 - progressInfo.progress / 100)}`}
+                          strokeDashoffset={`${2 * Math.PI * 56 * (1 - progressData.percent / 100)}`}
                           className="transition-all duration-1000 ease-out drop-shadow-lg"
                           filter={`url(#glow-${index})`}
                           strokeLinecap="round"
@@ -425,14 +523,16 @@ const TVDisplaySystem = () => {
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-center">
                           <div className="text-2xl font-black text-slate-700">
-                            {Math.round(progressInfo.progress)}%
+                            {Math.round(progressData.percent)}%
                           </div>
-                          <div className="text-xs font-semibold text-slate-500 uppercase">Complété</div>
+                          <div className="text-xs font-semibold text-slate-500 uppercase">
+                            {isOvertime ? 'Finition' : 'Complété'}
+                          </div>
                         </div>
                       </div>
                     </div>
                     
-                    {/* Service Details Grid - ENHANCED */}
+                    {/* Service Details Grid */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                         <div className="flex items-center space-x-3">
@@ -466,69 +566,165 @@ const TVDisplaySystem = () => {
             })}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <div className="w-24 h-24 mx-auto mb-6 bg-slate-100 rounded-full flex items-center justify-center">
-              <Clock className="w-12 h-12 text-slate-400" />
+          <div className="text-center py-20">
+            <div className="relative mb-8">
+              <div className="absolute -inset-4 bg-gradient-to-r from-blue-400 to-purple-400 rounded-3xl blur opacity-40"></div>
+              <div className="relative w-24 h-24 bg-blue-600 rounded-2xl flex items-center justify-center shadow-2xl mx-auto">
+                <Car className="w-12 h-12 text-white" />
+              </div>
             </div>
-            <h3 className="text-2xl font-bold text-slate-600 mb-2">Aucun service actif</h3>
-            <p className="text-slate-500">Les services en cours apparaîtront ici</p>
+            <div className="text-4xl font-black mb-6 text-white">Aucun Service Actif</div>
+            <div className="text-xl text-blue-200 mb-8">En attente de nouveaux clients</div>
+            <div className="inline-flex items-center space-x-2 px-6 py-3 bg-white/10 rounded-2xl">
+              <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+              <span className="text-blue-200 font-bold">Système Prêt</span>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 
+  // Advertising Display
   const AdvertisingDisplay = () => (
-    <div className={`min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 text-white flex items-center justify-center transition-all duration-500 ${viewTransition ? 'scale-95 opacity-50' : 'scale-100 opacity-100'}`}>
-      <div className="text-center max-w-4xl mx-auto px-8">
-        <div className="mb-8">
-          <Star className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
-          <h2 className="text-6xl font-black mb-4">TOUINI AUTO</h2>
-          <p className="text-2xl font-light opacity-90">Excellence • Qualité • Confiance</p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 text-white relative overflow-hidden">
+      {/* Background Animation */}
+      <div className="absolute inset-0">
+        {particles.map(particle => (
+          <div
+            key={particle.id}
+            className="absolute w-2 h-2 bg-purple-400 rounded-full animate-pulse"
+            style={{
+              left: `${particle.x}%`,
+              top: `${particle.y}%`,
+              opacity: particle.opacity * 0.6
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Header */}
+      <div className="relative z-10 p-8 text-center">
+        <div className="relative mb-8">
+          <div className="absolute -inset-4 bg-gradient-to-r from-purple-400 to-pink-400 rounded-3xl blur-lg opacity-40 animate-pulse"></div>
+          <div className="relative w-32 h-32 bg-gradient-to-br from-purple-600 to-pink-600 rounded-3xl flex items-center justify-center shadow-2xl mx-auto">
+            <Zap className="w-16 h-16 text-white" />
+          </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
-          <div className="text-center">
-            <Zap className="w-8 h-8 mx-auto mb-4 text-blue-400" />
-            <h3 className="text-xl font-bold mb-2">Service Rapide</h3>
-            <p className="text-sm opacity-80">Lavage express en 15 minutes</p>
+        <h1 className="text-6xl font-black mb-6">JOUINI CAR WASH</h1>
+        <p className="text-2xl text-purple-200 font-semibold">Service Premium - Qualité Garantie</p>
+      </div>
+
+      {/* Services Grid */}
+      <div className="relative z-10 p-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 border border-white/20 text-center">
+            <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Car className="w-8 h-8 text-white" />
+            </div>
+            <div className="text-2xl font-black mb-3">Lavage Extérieur</div>
+            <div className="text-purple-200 text-lg">Nettoyage complet extérieur</div>
           </div>
-          <div className="text-center">
-            <Award className="w-8 h-8 mx-auto mb-4 text-green-400" />
-            <h3 className="text-xl font-bold mb-2">Qualité Premium</h3>
-            <p className="text-sm opacity-80">Produits écologiques certifiés</p>
+
+          <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 border border-white/20 text-center">
+            <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Star className="w-8 h-8 text-white" />
+            </div>
+            <div className="text-2xl font-black mb-3">Service Premium</div>
+            <div className="text-purple-200 text-lg">Intérieur + Extérieur complet</div>
           </div>
-          <div className="text-center">
-            <CheckCircle className="w-8 h-8 mx-auto mb-4 text-purple-400" />
-            <h3 className="text-xl font-bold mb-2">Satisfaction Garantie</h3>
-            <p className="text-sm opacity-80">Service client exceptionnel</p>
+
+          <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 border border-white/20 text-center">
+            <div className="w-16 h-16 bg-yellow-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Award className="w-8 h-8 text-white" />
+            </div>
+            <div className="text-2xl font-black mb-3">Qualité Garantie</div>
+            <div className="text-purple-200 text-lg">Satisfaction client 100%</div>
+          </div>
+        </div>
+
+        {/* Call to Action */}
+        <div className="relative">
+          <div className="absolute -inset-4 bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 rounded-3xl blur-lg opacity-30 animate-pulse"></div>
+          <div className="relative bg-white/10 backdrop-blur-xl rounded-2xl p-8 border border-white/20 text-center">
+            <div className="text-3xl font-black mb-4">Réservation Immédiate</div>
+            <div className="text-xl text-purple-200">Appelez-nous ou venez directement</div>
           </div>
         </div>
       </div>
+
+      {/* Live Service Indicator */}
+      {currentServices.length > 0 && (
+        <div className="absolute top-8 right-8 bg-black/40 backdrop-blur-2xl rounded-2xl p-6 border border-white/20 shadow-2xl">
+          <div className="text-sm text-purple-200 mb-4 font-bold uppercase tracking-wider">
+            Services en cours
+          </div>
+          {currentServices.slice(0, 4).map(service => {
+            const elapsed = getTimeElapsed(service.start_time);
+            const remaining = getEstimatedTimeRemaining(service.service_type, elapsed);
+            
+            return (
+              <div key={service.id} className="flex justify-between items-center text-sm mb-3 p-3 bg-white/10 rounded-xl backdrop-blur-sm">
+                <span className="font-bold">{service.immatriculation}</span>
+                <span className="text-green-300 font-bold ml-4">
+                  {remaining} min
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 
+  // Loading screen
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600 font-medium">Chargement des données...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0">
+          {particles.map(particle => (
+            <div
+              key={particle.id}
+              className="absolute w-1 h-1 bg-blue-400 rounded-full animate-pulse"
+              style={{
+                left: `${particle.x}%`,
+                top: `${particle.y}%`,
+                opacity: particle.opacity
+              }}
+            />
+          ))}
+        </div>
+        
+        <div className="relative z-10 text-center">
+          <div className="relative mb-8">
+            <div className="absolute -inset-4 bg-gradient-to-r from-blue-400 to-purple-400 rounded-3xl blur opacity-40 animate-pulse"></div>
+            <div className="relative w-24 h-24 bg-blue-600 rounded-2xl flex items-center justify-center shadow-2xl">
+              <Tv className="w-12 h-12 text-white animate-pulse" />
+            </div>
+          </div>
+          <div className="text-3xl font-black mb-4">Initialisation du système TV</div>
+          <div className="text-blue-200">Connexion aux données en temps réel...</div>
         </div>
       </div>
     );
   }
 
+  // Error screen
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-red-900 via-red-800 to-red-700 text-white flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-red-800 mb-2">Erreur de connexion</h2>
-          <p className="text-red-600">{error}</p>
-          <button 
+          <div className="relative mb-8">
+            <div className="absolute -inset-4 bg-red-400 rounded-3xl blur opacity-40"></div>
+            <div className="relative w-24 h-24 bg-red-600 rounded-2xl flex items-center justify-center shadow-2xl">
+              <AlertCircle className="w-12 h-12 text-white" />
+            </div>
+          </div>
+          <div className="text-4xl font-black mb-6">Erreur de connexion</div>
+          <div className="text-xl mb-8 text-red-200">{error}</div>
+          <button
             onClick={fetchTVData}
-            className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="px-12 py-4 bg-white text-red-900 rounded-2xl hover:bg-gray-100 font-black text-xl transition-all duration-300 hover:scale-110 shadow-2xl"
           >
             Réessayer
           </button>
@@ -537,7 +733,13 @@ const TVDisplaySystem = () => {
     );
   }
 
-  return currentView === 'service' ? <ServiceDisplay /> : <AdvertisingDisplay />;
+  return (
+    <div className="relative">
+      {currentView === 'service' && <ServiceDisplay />}
+      {currentView === 'completion' && <CompletionDisplay />}
+      {currentView === 'advertising' && <AdvertisingDisplay />}
+    </div>
+  );
 };
 
 export default TVDisplaySystem;
