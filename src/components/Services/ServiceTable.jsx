@@ -61,21 +61,16 @@ const formatDuration = (startTime, endTime = null, totalDuration = null) => {
   // 2. If no start time, show 00:00:00
   if (!startTime) return '00:00:00';
   
-  // 🌍 UNIVERSAL SOLUTION: Use UTC for all calculations
+  // 3. Calculate elapsed time using consistent timezone handling
   const startUTC = new Date(startTime).getTime(); // Convert to UTC milliseconds
   const nowUTC = endTime ? new Date(endTime).getTime() : Date.now(); // Current UTC time
   
   // Calculate difference in seconds (always positive)
   let diffSeconds = Math.floor((nowUTC - startUTC) / 1000);
   
-  // 🔧 For "session timers" - if more than 1 hour difference, reset to fresh timer
-  // This handles cases where timer should start fresh regardless of creation time
-  if (!endTime && diffSeconds > 3600) { // More than 1 hour
-    diffSeconds = diffSeconds % 3600; // Start within the current hour
-  }
-  
-  // Ensure no negative values
-  diffSeconds = Math.max(0, diffSeconds);
+  // 4. Safety checks for data integrity
+  if (diffSeconds < 0) diffSeconds = 0;        // Handle future times
+  if (diffSeconds > 28800) diffSeconds = 0;    // Reset if more than 8 hours (data error)
   
   const hours = Math.floor(diffSeconds / 3600);
   const minutes = Math.floor((diffSeconds % 3600) / 60);
