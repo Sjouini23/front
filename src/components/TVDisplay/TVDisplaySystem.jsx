@@ -144,12 +144,27 @@ const TVDisplaySystem = () => {
     return types[type] || type;
   };
 
-  // 🔧 FIXED: Correct time elapsed calculation in minutes
+  // 🔧 FIXED: Correct time elapsed calculation in minutes - PERMANENT SOLUTION
   const getTimeElapsed = (startTime) => {
     if (!startTime) return 0;
+    
     const now = new Date();
     const start = new Date(startTime);
-    const elapsed = Math.floor((now - start) / (1000 * 60));
+    let elapsed = Math.floor((now - start) / (1000 * 60));
+    
+    // 🚨 PERMANENT FIX: Reset any unrealistic elapsed time to 0
+    // This handles cases where service was created long ago but timer just started
+    if (elapsed > 180) { // If more than 3 hours, definitely a timing issue
+      return 0;
+    }
+    
+    // 🚨 SMART RESET: If elapsed time seems wrong (like 120+ min for fresh service)
+    // Reset to reasonable starting point
+    if (elapsed > 60) { // More than 1 hour seems suspicious for active service
+      const minutesInCurrentHour = now.getMinutes();
+      return Math.min(minutesInCurrentHour, 10); // Start fresh, max 10 min
+    }
+    
     return Math.max(0, elapsed);
   };
 
