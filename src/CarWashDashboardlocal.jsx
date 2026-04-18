@@ -10,6 +10,7 @@ import { useNotifications } from './hooks/useNotifications1';
 import { useAuth } from './hooks/useAuth';
 import { useServices } from './hooks/useServices';
 import { useStaff } from './hooks/useStaff';
+import { useDeviceMode } from './hooks/useDeviceMode';
 
 // COMPONENTS
 import AppErrorBoundary from './components/shared/AppErrorBoundary';
@@ -25,6 +26,7 @@ import { PersonalAIAssistant } from './components/Dashboard';
 import { ServicesList } from './components/Services';
 import { SettingsMain } from './components/Settings';
 import TVDisplaySystem from './components/TVDisplay/TVDisplaySystem';
+import { DevicePicker, MobileApp } from './components/Mobile';
 
 
 export default function JouiniLuxuryAI2025() {
@@ -41,6 +43,7 @@ export default function JouiniLuxuryAI2025() {
   const authData = useAuth(addNotification);
   const serviceData = useServices(addNotification);
   const { staffMembers, addStaff, renameStaff, deleteStaff } = useStaff();
+  const { deviceMode, setDeviceMode, clearDeviceMode } = useDeviceMode();
 
   const currentTheme = LUXURY_THEMES_2025[theme];
 
@@ -67,6 +70,18 @@ export default function JouiniLuxuryAI2025() {
     authData.handleLogout();
     setActiveTab('dashboard');
     clearAllNotifications();
+  };
+
+  const handleDeviceSelect = (mode, remember) => {
+    if (remember) {
+      setDeviceMode(mode);
+    } else {
+      setDeviceMode(mode);
+    }
+  };
+
+  const handleSwitchDevice = () => {
+    clearDeviceMode();
   };
 
   // Handle keyboard shortcuts
@@ -117,6 +132,51 @@ if (isTVRoute) {
           notifications={notifications} 
           onDismiss={removeNotification} 
           theme={theme} 
+        />
+      </AppErrorBoundary>
+    );
+  }
+
+  // Device picker — shown after login if no device chosen
+  if (authData.isAuthenticated && !deviceMode) {
+    return (
+      <AppErrorBoundary>
+        <DevicePicker theme={theme} onSelect={handleDeviceSelect} />
+      </AppErrorBoundary>
+    );
+  }
+
+  // Mobile app
+  if (authData.isAuthenticated && deviceMode === 'mobile') {
+    return (
+      <AppErrorBoundary>
+        <Notifications notifications={notifications} onDismiss={removeNotification} theme={theme} />
+        {serviceData.showServiceForm && (
+          <Suspense fallback={<div>Loading...</div>}>
+            <ServiceForm
+              onSubmit={serviceData.handleCreateService}
+              existingService={serviceData.editingService}
+              onCancel={() => { serviceData.setShowServiceForm(false); serviceData.setEditingService(null); }}
+              theme={theme}
+              addNotification={addNotification}
+              serviceConfig={serviceData.serviceConfig}
+              staffMembers={staffMembers}
+            />
+          </Suspense>
+        )}
+        <MobileApp
+          theme={theme}
+          setTheme={setTheme}
+          serviceData={serviceData}
+          staffMembers={staffMembers}
+          addStaff={addStaff}
+          renameStaff={renameStaff}
+          deleteStaff={deleteStaff}
+          onLogout={handleLogout}
+          onSwitchDevice={handleSwitchDevice}
+          addNotification={addNotification}
+          onNewService={() => serviceData.setShowServiceForm(true)}
+          onEditService={serviceData.handleEditService}
         />
       </AppErrorBoundary>
     );
