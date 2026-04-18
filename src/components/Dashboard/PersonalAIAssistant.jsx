@@ -928,7 +928,7 @@ const ServiceAnalysisCard = ({ data, theme }) => {
   );
 };
 
-const SearchResultsCard = ({ data, theme }) => {
+const SearchResultsCard = ({ data, theme, staffMembers = {} }) => {
   const currentTheme = LUXURY_THEMES_2025[theme] || {};
   
   const formatCurrency = (amount) => {
@@ -2207,7 +2207,7 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury', staffMembers = {} }
         case 'active':
           return <ActiveServicesCard key={card.type} data={card.data} theme={theme} />;
         case 'searchResults':
-          return <SearchResultsCard key={card.type} data={card.data} theme={theme} />;
+          return <SearchResultsCard key={card.type} data={card.data} theme={theme} staffMembers={staffMembers} />;
         case 'info':
           return (
             <div key={card.type} className={`${currentTheme.glass || 'bg-white'} rounded-xl p-4 border border-blue-500/20 bg-blue-500/5`}>
