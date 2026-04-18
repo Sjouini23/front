@@ -3,16 +3,23 @@ import { Shield, Database,Square,Wifi, Settings, Users, Car, Droplets, Star, Dol
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
 import { safeParseNumber } from '../../utils/validation';
 
-const SettingsMain = ({ 
-  theme, 
-  setTheme, 
-  serviceConfig, 
-  setServiceConfig, 
-  services 
+const SettingsMain = ({
+  theme,
+  setTheme,
+  serviceConfig,
+  setServiceConfig,
+  services,
+  staffMembers = {},
+  addStaff,
+  renameStaff,
+  deleteStaff
 }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   const [feedback, setFeedback] = useState('');
   const [feedbackSent, setFeedbackSent] = useState(false);
+  const [newStaffName, setNewStaffName] = useState('');
+  const [editingKey, setEditingKey] = useState(null);
+  const [editingName, setEditingName] = useState('');
 
   // Calculate average duration from completed services + 5 minutes
   const calculateServiceDuration = (serviceType) => {
@@ -286,6 +293,114 @@ const SettingsMain = ({
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* STAFF MANAGEMENT */}
+      <div className={`${currentTheme.surface} rounded-2xl p-6 sm:p-8 shadow-xl border ${currentTheme.border}`}>
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 shadow-md">
+            <Users className="text-white" size={20} />
+          </div>
+          <div>
+            <h3 className={`text-2xl font-bold ${currentTheme.text}`}>Gestion du Personnel</h3>
+            <p className={`${currentTheme.textSecondary} text-sm mt-1`}>
+              Ajouter, renommer ou supprimer des employés
+            </p>
+          </div>
+        </div>
+
+        {/* Current staff list */}
+        <div className="space-y-3 mb-6">
+          {Object.entries(staffMembers).map(([key, staff]) => (
+            <div key={key} className={`${currentTheme.glass} rounded-xl p-4 border ${currentTheme.border} flex items-center justify-between`}>
+              {editingKey === key ? (
+                <div className="flex items-center space-x-2 flex-1 mr-2">
+                  <input
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { renameStaff(key, editingName); setEditingKey(null); }
+                      if (e.key === 'Escape') setEditingKey(null);
+                    }}
+                    className={`flex-1 px-3 py-2 rounded-lg border ${currentTheme.border} ${currentTheme.text} bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => { renameStaff(key, editingName); setEditingKey(null); }}
+                    className="px-3 py-2 rounded-lg bg-green-500/20 text-green-600 hover:bg-green-500/40 transition-all text-sm font-medium"
+                  >
+                    ✓ Sauver
+                  </button>
+                  <button
+                    onClick={() => setEditingKey(null)}
+                    className="px-3 py-2 rounded-lg bg-gray-500/20 text-gray-500 hover:bg-gray-500/40 transition-all text-sm"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-xl">{staff.icon}</span>
+                    <div>
+                      <span className={`font-semibold ${currentTheme.text}`}>{staff.name}</span>
+                      <p className={`text-xs ${currentTheme.textSecondary}`}>ID: {key}</p>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => { setEditingKey(key); setEditingName(staff.name); }}
+                      className="px-3 py-2 rounded-lg bg-blue-500/20 text-blue-500 hover:bg-blue-500/40 transition-all text-sm font-medium"
+                    >
+                      ✏️ Renommer
+                    </button>
+                    <button
+                      onClick={() => deleteStaff(key)}
+                      disabled={Object.keys(staffMembers).length <= 1}
+                      className="px-3 py-2 rounded-lg bg-red-500/20 text-red-500 hover:bg-red-500/40 transition-all text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed"
+                      title={Object.keys(staffMembers).length <= 1 ? "Impossible de supprimer le dernier employé" : "Supprimer"}
+                    >
+                      🗑️ Supprimer
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Add new staff */}
+        <div className={`${currentTheme.glass} rounded-xl p-4 border border-dashed ${currentTheme.border}`}>
+          <p className={`text-sm font-medium ${currentTheme.textSecondary} mb-3`}>
+            ➕ Ajouter un nouvel employé
+          </p>
+          <div className="flex space-x-3">
+            <input
+              value={newStaffName}
+              onChange={(e) => setNewStaffName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newStaffName.trim()) {
+                  addStaff(newStaffName);
+                  setNewStaffName('');
+                }
+              }}
+              placeholder="Prénom de l'employé..."
+              className={`flex-1 px-4 py-3 rounded-xl border ${currentTheme.border} ${currentTheme.text} bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
+            />
+            <button
+              onClick={() => {
+                if (newStaffName.trim()) {
+                  addStaff(newStaffName);
+                  setNewStaffName('');
+                }
+              }}
+              disabled={!newStaffName.trim()}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Ajouter
+            </button>
+          </div>
         </div>
       </div>
 

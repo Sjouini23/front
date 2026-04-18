@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
-import { SERVICE_TYPES, STAFF_MEMBERS, VEHICLE_TYPES, ALL_BRANDS, VEHICLE_COLORS } from '../../utils/configs';
+import { SERVICE_TYPES, VEHICLE_TYPES, ALL_BRANDS, VEHICLE_COLORS } from '../../utils/configs';
 import { sanitizeInput, validateLicensePlate, validatePhone, isValidDate, safeParseNumber } from '../../utils/validation';
 import config from '../../config.local';
 import { getCurrentDateString } from '../../utils/dateUtils';
@@ -67,28 +67,15 @@ const REORDERED_SERVICE_TYPES = {
   }
 };
 
-// UPDATED PROFESSIONAL STAFF MEMBERS
-const UPDATED_STAFF_MEMBERS = {
-  ...STAFF_MEMBERS,
-  bilal: {
-    ...STAFF_MEMBERS.bilal,
-    emoji: null, // Remove emoji
-    icon: User // Use Lucide User icon
-  },
-  ayoub: {
-    ...STAFF_MEMBERS.ayoub,
-    emoji: null, // Remove emoji
-    icon: User // Use Lucide User icon
-  }
-};
 
-const AppleLuxuryServiceForm = React.memo(({ 
-  onSubmit, 
-  existingService, 
-  onCancel, 
-  theme, 
+const AppleLuxuryServiceForm = React.memo(({
+  onSubmit,
+  existingService,
+  onCancel,
+  theme,
   addNotification,
-  serviceConfig // ADD serviceConfig prop to get prices from settings
+  serviceConfig,
+  staffMembers = {}
 }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   const [showTaxiMode, setShowTaxiMode] = useState(false);
@@ -1088,7 +1075,7 @@ onSubmit(sanitizedData);
                 </div>
                 
                 <div className="space-y-2">
-                  {Object.entries(UPDATED_STAFF_MEMBERS).map(([key, staff]) => (
+                  {Object.entries(staffMembers).map(([key, staff]) => (
                     <label 
                       key={key} 
                       className={`flex items-center space-x-3 cursor-pointer p-2 rounded-lg transition-all duration-200 transform hover:scale-102 ${
@@ -1251,7 +1238,7 @@ onSubmit(sanitizedData);
                           {formData.staff.map(staffId => (
                             <span key={staffId} className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full font-medium flex items-center space-x-1">
                               <User size={10} />
-                              <span>{UPDATED_STAFF_MEMBERS[staffId]?.name}</span>
+                              <span>{staffMembers[staffId]?.name}</span>
                             </span>
                           ))}
                         </div>

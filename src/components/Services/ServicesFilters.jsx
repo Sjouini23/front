@@ -1,6 +1,6 @@
 import React from 'react';
 import { Filter, Search, Car, Users, Droplets, Star, Calendar, ArrowUpDown, TrendingUp } from 'lucide-react';
-import { VEHICLE_TYPES, STAFF_MEMBERS } from '../../utils/configs';
+import { VEHICLE_TYPES } from '../../utils/configs';
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
 
 // Define the four premium services
@@ -58,7 +58,8 @@ const ServicesFilters = ({
   dateRange,
   setDateRange,
   sortOrder,
-  setSortOrder
+  setSortOrder,
+  staffMembers = {}
 }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
 
@@ -114,7 +115,7 @@ const ServicesFilters = ({
             className={`pl-10 px-3 py-2 rounded-lg ${currentTheme.glass} ${currentTheme.border} ${currentTheme.text} ${currentTheme.ring} focus:border-transparent transition-all duration-300 text-sm shadow-md hover:shadow-lg hover:scale-[1.02] w-full appearance-none`}
           >
             <option value="all">Tout le staff</option>
-            {Object.entries(STAFF_MEMBERS).map(([key, staff]) => (
+            {Object.entries(staffMembers).map(([key, staff]) => (
               <option key={key} value={key}>{staff.name}</option>
             ))}
           </select>

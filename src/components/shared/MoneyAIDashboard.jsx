@@ -7,8 +7,7 @@ import {
 } from 'lucide-react';
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
 import { PREMIUM_SERVICES } from '../Services/ServicesFilters';
-import { STAFF_MEMBERS } from '../../utils/configs';
-import { getCurrentDateString, isDateBeforeToday } from '../../utils/dateUtils';const MoneyDashboard = ({ services, theme }) => {
+import { getCurrentDateString, isDateBeforeToday } from '../../utils/dateUtils';const MoneyDashboard = ({ services, theme, staffMembers = {} }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   
   // State for filters and display
@@ -90,7 +89,7 @@ import { getCurrentDateString, isDateBeforeToday } from '../../utils/dateUtils';
 
     // Staff earnings calculation
     const staffEarnings = {};
-    Object.keys(STAFF_MEMBERS).forEach(staffKey => {
+    Object.keys(staffMembers).forEach(staffKey => {
       const staffServices = filteredServices.filter(service => 
         Array.isArray(service.staff) ? 
           service.staff.includes(staffKey) : 
@@ -193,7 +192,7 @@ import { getCurrentDateString, isDateBeforeToday } from '../../utils/dateUtils';
         ['PERFORMANCE ÉQUIPE'],
         ['Staff', 'Revenus (DT)', 'Services', 'Moyenne (DT)'],
         ...Object.entries(financialData.staffEarnings).map(([key, data]) => [
-          STAFF_MEMBERS[key]?.name || key,
+          staffMembers[key]?.name || key,
           data.earnings,
           data.services,
           data.average
@@ -345,7 +344,7 @@ import { getCurrentDateString, isDateBeforeToday } from '../../utils/dateUtils';
               className={`w-full px-3 py-2 rounded-lg ${currentTheme.glass} ${currentTheme.border} ${currentTheme.text} ${currentTheme.ring} focus:border-transparent transition-all duration-300 text-sm shadow-md appearance-none`}
             >
               <option value="all">Tous les employés</option>
-              {Object.entries(STAFF_MEMBERS).map(([key, staff]) => (
+              {Object.entries(staffMembers).map(([key, staff]) => (
                 <option key={key} value={key}>{staff.name}</option>
               ))}
             </select>
@@ -514,10 +513,10 @@ import { getCurrentDateString, isDateBeforeToday } from '../../utils/dateUtils';
                     </div>
                     <div>
                       <h4 className={`font-bold ${currentTheme.text}`}>
-                        {STAFF_MEMBERS[staffKey]?.name || staffKey}
+                        {staffMembers[staffKey]?.name || staffKey}
                       </h4>
                       <p className={`text-sm ${currentTheme.textSecondary}`}>
-                        {STAFF_MEMBERS[staffKey]?.specialty || 'Spécialiste'}
+                        {staffMembers[staffKey]?.specialty || 'Spécialiste'}
                       </p>
                     </div>
                   </div>

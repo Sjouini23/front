@@ -10,7 +10,7 @@ import {
   Gauge, Hash, Calendar as CalendarIcon, Clock8, MapPinIcon, TrendingDown, Search 
 } from 'lucide-react';
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
-import { VEHICLE_TYPES, STAFF_MEMBERS } from '../../utils/configs';
+import { VEHICLE_TYPES } from '../../utils/configs';
 import { parseLocalDate, isDateBeforeToday, isDateToday, getCurrentDateString, formatDateLocal } from '../../utils/dateUtils';
 
 // REAL PREMIUM SERVICES from your app
@@ -88,9 +88,9 @@ const robustNLP = {
         'marque': 'marque', 'modèle': 'modèle', 'couleur': 'couleur',
         'lavage': 'lavage', 'nettoyage': 'nettoyage', 'détailing': 'détailing',
         'semaine': 'semaine', 'mois': 'mois', 'année': 'année', 'jour': 'jour',
-        // Add REAL staff names from STAFF_MEMBERS
-        ...Object.keys(STAFF_MEMBERS || {}).reduce((acc, key) => {
-          const staff = STAFF_MEMBERS[key];
+        // Add REAL staff names from staffMembers
+        ...Object.keys(staffMembers || {}).reduce((acc, key) => {
+          const staff = staffMembers[key];
           if (staff && staff.name) {
             acc[staff.name.toLowerCase()] = staff.name.toLowerCase();
           }
@@ -440,8 +440,8 @@ const robustNLP = {
       });
       
       // Extract staff names
-      Object.keys(STAFF_MEMBERS || {}).forEach(staffKey => {
-        const staff = STAFF_MEMBERS[staffKey];
+      Object.keys(staffMembers || {}).forEach(staffKey => {
+        const staff = staffMembers[staffKey];
         if (staff && staff.name && text.toLowerCase().includes(staff.name.toLowerCase())) {
           searchTerms.staff.push(staffKey);
         }
@@ -487,7 +487,7 @@ const robustNLP = {
       
       // Safe entity detection with REAL staff names
       const entities = [];
-      const realStaffNames = Object.values(STAFF_MEMBERS || {}).map(s => s.name?.toLowerCase()).filter(Boolean);
+      const realStaffNames = Object.values(staffMembers || {}).map(s => s.name?.toLowerCase()).filter(Boolean);
       const detectedStaff = lemmas.find(lemma => realStaffNames.includes(lemma));
       
       if (detectedStaff) entities.push(detectedStaff);
@@ -958,9 +958,9 @@ const SearchResultsCard = ({ data, theme }) => {
   const getStaffName = (staffArray) => {
     if (!staffArray) return 'N/A';
     if (Array.isArray(staffArray)) {
-      return staffArray.map(s => STAFF_MEMBERS[s]?.name || s).join(' + ');
+      return staffArray.map(s => staffMembers[s]?.name || s).join(' + ');
     }
-    return STAFF_MEMBERS[staffArray]?.name || staffArray;
+    return staffMembers[staffArray]?.name || staffArray;
   };
 
   if (!data || !Array.isArray(data.results) || data.results.length === 0) {
@@ -1199,7 +1199,7 @@ const ActiveServicesCard = ({ data, theme }) => {
 };
 
 // MAIN AI ASSISTANT COMPONENT CONNECTED TO REAL DATA
-const SmartAIAssistant = ({ services = [], theme = 'luxury' }) => {
+const SmartAIAssistant = ({ services = [], theme = 'luxury', staffMembers = {} }) => {
   const currentTheme = LUXURY_THEMES_2025[theme] || {};
 
   const [conversationMemory, setConversationMemory] = useState(() => {
@@ -1457,11 +1457,11 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury' }) => {
         console.warn('Financial analysis error:', financialError);
       }
 
-      // Safe staff analysis using REAL STAFF_MEMBERS
+      // Safe staff analysis using REAL staffMembers
       try {
-        Object.keys(STAFF_MEMBERS || {}).forEach(staffKey => {
+        Object.keys(staffMembers || {}).forEach(staffKey => {
           try {
-            const staffInfo = STAFF_MEMBERS[staffKey];
+            const staffInfo = staffMembers[staffKey];
             const staffServices = filteredServices.filter(s => {
               try {
                 return Array.isArray(s?.staff) ? s.staff.includes(staffKey) : s?.staff === staffKey;
@@ -1504,7 +1504,7 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury' }) => {
           } catch (staffError) {
             console.warn(`Staff analysis error for ${staffKey}:`, staffError);
             analysis.staff[staffKey] = {
-              name: STAFF_MEMBERS[staffKey]?.name || staffKey,
+              name: staffMembers[staffKey]?.name || staffKey,
               revenue: 0,
               services: 0,
               average: 0,
@@ -1656,8 +1656,8 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury' }) => {
               serviceType: PREMIUM_SERVICES?.[service?.serviceType]?.name || service?.serviceType || 'Service inconnu',
               elapsed,
               staff: Array.isArray(service?.staff) ? 
-                service.staff.map(s => STAFF_MEMBERS[s]?.name || s).join(', ') : 
-                STAFF_MEMBERS[service?.staff]?.name || service?.staff || 'N/A'
+                service.staff.map(s => staffMembers[s]?.name || s).join(', ') : 
+                staffMembers[service?.staff]?.name || service?.staff || 'N/A'
             };
           } catch (activeServiceError) {
             console.warn('Active service processing error:', activeServiceError);
@@ -1803,7 +1803,7 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury' }) => {
                 plaques: nlp.searchTerms.licensePlates?.length > 0 ? nlp.searchTerms.licensePlates : null,
                 dates: nlp.searchTerms.dates ? nlp.searchTerms.dates.dateString || nlp.searchTerms.dates.timeframe : null,
                 services: nlp.searchTerms.services?.length > 0 ? nlp.searchTerms.services.map(s => PREMIUM_SERVICES[s]?.name || s) : null,
-                staff: nlp.searchTerms.staff?.length > 0 ? nlp.searchTerms.staff.map(s => STAFF_MEMBERS[s]?.name || s) : null,
+                staff: nlp.searchTerms.staff?.length > 0 ? nlp.searchTerms.staff.map(s => staffMembers[s]?.name || s) : null,
                 notes: nlp.searchTerms.notes?.length > 0 ? nlp.searchTerms.notes : null
               }
             }
@@ -1819,7 +1819,7 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury' }) => {
             if (nlp.searchTerms.licensePlates?.length > 0) criteria.push(`plaques: ${nlp.searchTerms.licensePlates.join(', ')}`);
             if (nlp.searchTerms.dates) criteria.push(`date: ${nlp.searchTerms.dates.dateString || nlp.searchTerms.dates.timeframe}`);
             if (nlp.searchTerms.services?.length > 0) criteria.push(`services: ${nlp.searchTerms.services.map(s => PREMIUM_SERVICES[s]?.name || s).join(', ')}`);
-            if (nlp.searchTerms.staff?.length > 0) criteria.push(`staff: ${nlp.searchTerms.staff.map(s => STAFF_MEMBERS[s]?.name || s).join(', ')}`);
+            if (nlp.searchTerms.staff?.length > 0) criteria.push(`staff: ${nlp.searchTerms.staff.map(s => staffMembers[s]?.name || s).join(', ')}`);
             if (nlp.searchTerms.notes?.length > 0) criteria.push(`notes: ${nlp.searchTerms.notes.join(', ')}`);
             
             searchSummary = `Recherche par ${criteria.join(' + ')} → ${searchResults.length} résultat(s)`;
@@ -1922,8 +1922,8 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury' }) => {
           
           if (nlp.staff) {
             // Find staff by REAL name matching
-            const staffKey = Object.keys(STAFF_MEMBERS || {}).find(key => 
-              STAFF_MEMBERS[key]?.name?.toLowerCase() === nlp.staff.toLowerCase()
+            const staffKey = Object.keys(staffMembers || {}).find(key => 
+              staffMembers[key]?.name?.toLowerCase() === nlp.staff.toLowerCase()
             );
             const staffData = staffKey ? analysis.staff[staffKey] : null;
             
@@ -2379,7 +2379,7 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury' }) => {
             <div>
               <strong className="text-emerald-600">Staff Connectés:</strong>
               <div className="text-xs text-gray-500 ml-2 mt-1">
-                {Object.values(STAFF_MEMBERS || {}).map(s => s.name).join(', ')}
+                {Object.values(staffMembers || {}).map(s => s.name).join(', ')}
                 <div className="mt-1">Exemples: "performance Bilal", "revenus Ayoub", "équipe aujourd'hui"</div>
               </div>
             </div>
@@ -2693,7 +2693,7 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury' }) => {
           
           <div className="flex items-center space-x-3">
             <div>Services analysés: {services?.length || 0}</div>
-            <div>Staff: {Object.keys(STAFF_MEMBERS || {}).length}</div>
+            <div>Staff: {Object.keys(staffMembers || {}).length}</div>
             <div className="flex items-center space-x-1">
               <Brain size={10} />
               <span>IA v4.0 Données Réelles + Recherche</span>

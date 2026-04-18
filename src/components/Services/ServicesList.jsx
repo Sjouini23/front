@@ -29,7 +29,8 @@ const ServicesList = ({
   setDateRange,
   // New sorting props
   sortOrder,
-  setSortOrder
+  setSortOrder,
+  staffMembers = {}
 }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   const safeServices = Array.isArray(services) ? services : [];
@@ -84,6 +85,7 @@ const ServicesList = ({
         setDateRange={setDateRange}
         sortOrder={sortOrder}
         setSortOrder={setSortOrder}
+        staffMembers={staffMembers}
       />
 
       {/* Enhanced Services Display */}
@@ -108,13 +110,14 @@ const ServicesList = ({
         </div>
       ) : (
         <ServiceTable
-        theme={theme} 
+        theme={theme}
         filteredServices={safeFiltered}
           serviceConfig={serviceConfig}
           onEditService={onEditService}
           onDeleteService={onDeleteService}
           onFinishService={onFinishService}
           sortOrder={sortOrder}
+          staffMembers={staffMembers}
         />
       )}
     </div>

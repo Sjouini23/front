@@ -9,6 +9,7 @@ import { useNotifications } from './hooks/useNotifications1';
 // CUSTOM HOOKS
 import { useAuth } from './hooks/useAuth';
 import { useServices } from './hooks/useServices';
+import { useStaff } from './hooks/useStaff';
 
 // COMPONENTS
 import AppErrorBoundary from './components/shared/AppErrorBoundary';
@@ -39,6 +40,7 @@ export default function JouiniLuxuryAI2025() {
   // Custom Hooks
   const authData = useAuth(addNotification);
   const serviceData = useServices(addNotification);
+  const { staffMembers, addStaff, renameStaff, deleteStaff } = useStaff();
 
   const currentTheme = LUXURY_THEMES_2025[theme];
 
@@ -156,6 +158,7 @@ if (isTVRoute) {
               theme={theme}
               addNotification={addNotification}
               serviceConfig={serviceData.serviceConfig}
+              staffMembers={staffMembers}
             />
           </Suspense>
         )}
@@ -186,12 +189,12 @@ if (isTVRoute) {
                 
                 {/* Multi-Agent Intelligence Grid */}
                 <div className="w-full max-w-screen-xl mx-auto px-4 sm:px-6">
-                   <PersonalAIAssistant services={serviceData.services} theme={theme} />
+                   <PersonalAIAssistant services={serviceData.services} theme={theme} staffMembers={staffMembers} />
                   </div>
               </div>
 )}
             {activeTab === 'money' && (
-              <MoneyAIDashboard services={serviceData.services} theme={theme} />
+              <MoneyAIDashboard services={serviceData.services} theme={theme} staffMembers={staffMembers} />
             )}
 
       
@@ -221,6 +224,7 @@ if (isTVRoute) {
     setDateRange={serviceData.setDateRange}
     sortOrder={sortOrder}
     setSortOrder={setSortOrder}
+    staffMembers={staffMembers}
   />
 )}
 
@@ -234,18 +238,22 @@ if (isTVRoute) {
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <PersonalAIAssistant services={serviceData.services} theme={theme} />
+                  <PersonalAIAssistant services={serviceData.services} theme={theme} staffMembers={staffMembers} />
                 </div>
               </div>
             )}
 
             {activeTab === 'settings' && (
-              <SettingsMain 
+              <SettingsMain
                 theme={theme}
                 setTheme={setTheme}
                 serviceConfig={serviceData.serviceConfig}
                 setServiceConfig={serviceData.setServiceConfig}
                 services={serviceData.services}
+                staffMembers={staffMembers}
+                addStaff={addStaff}
+                renameStaff={renameStaff}
+                deleteStaff={deleteStaff}
               />
             )}
           </Suspense>

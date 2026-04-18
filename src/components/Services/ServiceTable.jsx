@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Edit3, Trash2, Phone, CheckCircle, Clock, FileText } from 'lucide-react';
-import { VEHICLE_TYPES, STAFF_MEMBERS } from '../../utils/configs';
+import { VEHICLE_TYPES } from '../../utils/configs';
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
 import { isDateBeforeToday, formatDateLocal } from '../../utils/dateUtils';
 import { PREMIUM_SERVICES } from './ServicesFilters';
@@ -12,7 +12,8 @@ const ServiceTable = ({
   onEditService, 
   onDeleteService,
   onFinishService,
-  sortOrder = 'default'
+  sortOrder = 'default',
+  staffMembers = {}
 }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -234,7 +235,7 @@ const formatDuration = (startTime, endTime = null, totalDuration = null) => {
                     <div className="flex items-center space-x-1">
                       <span className={`font-bold ${currentTheme.text} text-sm`}>
                         {Array.isArray(service.staff) 
-                          ? service.staff.map(s => STAFF_MEMBERS[s]?.name || s).join(' + ')
+                          ? service.staff.map(s => staffMembers[s]?.name || s).join(' + ')
                           : 'Non assigné'
                         }
                       </span>
