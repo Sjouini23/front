@@ -72,7 +72,7 @@ const robustNLP = {
   },
   
   // Simple but effective lemmatization with REAL vocabulary
-  lemmatize: (word) => {
+  lemmatize: (word, staffMembers = {}) => {
     try {
       if (!word || typeof word !== 'string') return '';
       
@@ -409,7 +409,7 @@ const robustNLP = {
   },
 
   // NEW: Enhanced search terms extraction
-  extractSearchTerms: (text) => {
+  extractSearchTerms: (text, staffMembers = {}) => {
     try {
       if (!text || typeof text !== 'string') return {};
       
@@ -455,7 +455,7 @@ const robustNLP = {
   },
   
   // Enhanced context analysis with REAL data structures + multi-field search
-  analyzeContext: (text) => {
+  analyzeContext: (text, staffMembers = {}) => {
     try {
       if (!text || typeof text !== 'string') {
         return {
@@ -480,10 +480,10 @@ const robustNLP = {
       }
       
       const tokens = robustNLP.tokenize(text);
-      const lemmas = tokens.map(token => robustNLP.lemmatize(token));
+      const lemmas = tokens.map(token => robustNLP.lemmatize(token, staffMembers));
       const licensePlates = robustNLP.extractLicensePlates(text);
       const dateContext = robustNLP.parseDate(text);
-      const searchTerms = robustNLP.extractSearchTerms(text);
+      const searchTerms = robustNLP.extractSearchTerms(text, staffMembers);
       
       // Safe entity detection with REAL staff names
       const entities = [];
@@ -1696,7 +1696,7 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury', staffMembers = {} }
   // ROBUST RESPONSE GENERATOR with REAL data mapping
   const generateRobustResponse = (query) => {
     try {
-      const nlp = robustNLP.analyzeContext(query);
+      const nlp = robustNLP.analyzeContext(query, staffMembers);
       const analysis = analyzeDataSafely(nlp);
       
       // Safe memory update
@@ -2596,7 +2596,7 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury', staffMembers = {} }
             <div className="flex flex-wrap gap-1">
               {(() => {
                 try {
-                  const preview = robustNLP.analyzeContext(inputMessage);
+                  const preview = robustNLP.analyzeContext(inputMessage, staffMembers);
                   const indicators = [];
                   
                   if (preview.isFinancial) indicators.push({ label: 'Finance', color: 'green' });
