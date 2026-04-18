@@ -87,22 +87,31 @@ import { getCurrentDateString, isDateBeforeToday } from '../../utils/dateUtils';
       year: calculatePeriodRevenue(thisYearStart, "Cette année")
     };
 
-    // Staff earnings calculation
+    // Discover ALL staff from actual service data
+    const allStaffKeys = new Set();
+    Object.keys(staffMembers).forEach(k => allStaffKeys.add(k));
+    filteredServices.forEach(s => {
+      if (Array.isArray(s.staff)) {
+        s.staff.forEach(k => allStaffKeys.add(k));
+      } else if (s.staff) {
+        allStaffKeys.add(s.staff);
+      }
+    });
+
     const staffEarnings = {};
-    Object.keys(staffMembers).forEach(staffKey => {
-      const staffServices = filteredServices.filter(service => 
-        Array.isArray(service.staff) ? 
-          service.staff.includes(staffKey) : 
+    Array.from(allStaffKeys).forEach(staffKey => {
+      const staffServices = filteredServices.filter(service =>
+        Array.isArray(service.staff) ?
+          service.staff.includes(staffKey) :
           service.staff === staffKey
       );
-      
       const earnings = staffServices.reduce((sum, service) => {
         const servicePrice = service.totalPrice || 0;
         const staffCount = Array.isArray(service.staff) ? service.staff.length : 1;
         return sum + (servicePrice / staffCount);
       }, 0);
-      
       staffEarnings[staffKey] = {
+        name: staffMembers[staffKey]?.name || staffKey,
         earnings: Math.round(earnings),
         services: staffServices.length,
         average: staffServices.length > 0 ? Math.round(earnings / staffServices.length) : 0

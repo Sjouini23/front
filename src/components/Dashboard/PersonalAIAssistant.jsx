@@ -1459,7 +1459,19 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury', staffMembers = {} }
 
       // Safe staff analysis using REAL staffMembers
       try {
-        Object.keys(staffMembers || {}).forEach(staffKey => {
+        const allStaffKeys = new Set();
+        Object.keys(staffMembers || {}).forEach(k => allStaffKeys.add(k));
+        filteredServices.forEach(s => {
+          try {
+            if (Array.isArray(s?.staff)) {
+              s.staff.forEach(k => allStaffKeys.add(k));
+            } else if (s?.staff) {
+              allStaffKeys.add(s.staff);
+            }
+          } catch { }
+        });
+
+        Array.from(allStaffKeys).forEach(staffKey => {
           try {
             const staffInfo = staffMembers[staffKey];
             const staffServices = filteredServices.filter(s => {
