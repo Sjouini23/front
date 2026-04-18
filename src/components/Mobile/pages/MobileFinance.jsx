@@ -24,7 +24,17 @@ const MobileFinance = ({ services, theme, staffMembers = {} }) => {
     const count = filtered.length;
     const average = count > 0 ? Math.round(revenue / count) : 0;
 
-    const staffBreakdown = Object.keys(staffMembers).map(key => {
+    const allStaffKeys = new Set();
+    Object.keys(staffMembers).forEach(k => allStaffKeys.add(k));
+    filtered.forEach(s => {
+      if (Array.isArray(s.staff)) {
+        s.staff.forEach(k => allStaffKeys.add(k));
+      } else if (s.staff) {
+        allStaffKeys.add(s.staff);
+      }
+    });
+
+    const staffBreakdown = Array.from(allStaffKeys).map(key => {
       const staffServices = filtered.filter(s =>
         Array.isArray(s.staff) ? s.staff.includes(key) : s.staff === key
       );
