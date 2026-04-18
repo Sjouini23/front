@@ -108,10 +108,15 @@ const MobileServices = ({ filteredServices, theme, onEdit, onDelete, onFinish, o
                           <p className={`font-medium ${currentTheme.text}`}>{s.vehicleBrand} {s.vehicleModel}</p>
                         </div>
                       )}
-                      {s.phone && (
+                      {(s.phone || s.phoneNumber || s.client_phone) && (
                         <div>
                           <p className={`text-xs ${currentTheme.textSecondary}`}>Téléphone</p>
-                          <p className={`font-medium ${currentTheme.text}`}>{s.phone}</p>
+                          <a
+                            href={`tel:${s.phone || s.phoneNumber || s.client_phone}`}
+                            className="font-medium text-blue-500"
+                          >
+                            📞 {s.phone || s.phoneNumber || s.client_phone}
+                          </a>
                         </div>
                       )}
                     </div>

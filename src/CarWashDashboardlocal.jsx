@@ -314,6 +314,7 @@ if (isTVRoute) {
                 addStaff={addStaff}
                 renameStaff={renameStaff}
                 deleteStaff={deleteStaff}
+                onSwitchDevice={handleSwitchDevice}
               />
             )}
           </Suspense>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Database,Square,Wifi, Settings, Users, Car, Droplets, Star, DollarSign, Clock, MessageCircle, Mail, Send, Heart, Code } from 'lucide-react';
+import { Shield, Database, Square, Wifi, Settings, Users, Car, Droplets, Star, DollarSign, Clock, MessageCircle, Mail, Send, Heart, Code, Smartphone } from 'lucide-react';
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
 import { safeParseNumber } from '../../utils/validation';
 
@@ -12,7 +12,8 @@ const SettingsMain = ({
   staffMembers = {},
   addStaff,
   renameStaff,
-  deleteStaff
+  deleteStaff,
+  onSwitchDevice
 }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   const [feedback, setFeedback] = useState('');
@@ -510,6 +511,30 @@ const SettingsMain = ({
           </div>
         </div>
       </div>
+
+      {/* Switch to mobile */}
+      {onSwitchDevice && (
+        <div className={`${currentTheme.surface} rounded-2xl p-6 sm:p-8 shadow-xl border ${currentTheme.border}`}>
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 shadow-md">
+              <Smartphone className="text-white" size={20} />
+            </div>
+            <div>
+              <h3 className={`text-xl font-bold ${currentTheme.text}`}>Interface</h3>
+              <p className={`${currentTheme.textSecondary} text-sm mt-1`}>
+                Changer le mode d'affichage
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onSwitchDevice}
+            className={`w-full py-4 rounded-xl ${currentTheme.glass} border ${currentTheme.border} font-bold ${currentTheme.text} hover:opacity-80 transition-all flex items-center justify-center space-x-2 active:scale-95`}
+          >
+            <span>📱</span>
+            <span>Passer en mode Téléphone</span>
+          </button>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className={`${currentTheme.surface} rounded-2xl p-6 sm:p-8 shadow-xl border ${currentTheme.border} text-center`}>
