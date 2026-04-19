@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Shield, Database, Square, Wifi, Settings, Users, Car, Droplets, Star, DollarSign, Clock, MessageCircle, Mail, Send, Heart, Code, Smartphone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Shield, Database, Square, Wifi, Settings, Users, Car, Droplets, Star, DollarSign, Clock, MessageCircle, Mail, Send, Heart, Code, Smartphone, Trash2 } from 'lucide-react';
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
 import { safeParseNumber } from '../../utils/validation';
+import config from '../../config.local';
 
 const SettingsMain = ({
   theme,
@@ -21,6 +22,14 @@ const SettingsMain = ({
   const [newStaffName, setNewStaffName] = useState('');
   const [editingKey, setEditingKey] = useState(null);
   const [editingName, setEditingName] = useState('');
+  const [availability, setAvailability] = useState([]);
+  const [blockedDates, setBlockedDates] = useState([]);
+  const [newBlockedDate, setNewBlockedDate] = useState('');
+  const [newBlockedReason, setNewBlockedReason] = useState('');
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilitySaved, setAvailabilitySaved] = useState(false);
+
+  const DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
   // Calculate average duration from completed services + 5 minutes
   const calculateServiceDuration = (serviceType) => {
@@ -67,6 +76,104 @@ const SettingsMain = ({
     
     const averageInMinutes = Math.floor(totalDuration / completedServices.length / 60);
     return averageInMinutes + 5; // Add 5 minutes to average from table
+  };
+
+  // Load availability on mount
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch(`${config.API_BASE_URL}/api/availability`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAvailability(data);
+        }
+      } catch (e) {
+        console.warn('Failed to load availability:', e);
+      }
+    };
+
+    const fetchBlockedDates = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch(`${config.API_BASE_URL}/api/blocked-dates`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setBlockedDates(data);
+        }
+      } catch (e) {
+        console.warn('Failed to load blocked dates:', e);
+      }
+    };
+
+    fetchAvailability();
+    fetchBlockedDates();
+  }, []);
+
+  const updateDaySetting = (dayOfWeek, field, value) => {
+    setAvailability(prev => prev.map(day =>
+      day.day_of_week === dayOfWeek ? { ...day, [field]: value } : day
+    ));
+  };
+
+  const saveAvailability = async () => {
+    try {
+      setAvailabilityLoading(true);
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${config.API_BASE_URL}/api/availability`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ settings: availability })
+      });
+      if (res.ok) {
+        setAvailabilitySaved(true);
+        setTimeout(() => setAvailabilitySaved(false), 3000);
+      }
+    } catch (e) {
+      console.warn('Failed to save availability:', e);
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
+
+  const addBlockedDate = async () => {
+    if (!newBlockedDate) return;
+    try {
+      const token = localStorage.getItem('auth_token');
+      await fetch(`${config.API_BASE_URL}/api/blocked-dates`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ date: newBlockedDate, reason: newBlockedReason })
+      });
+      setBlockedDates(prev => [...prev, { blocked_date: newBlockedDate, reason: newBlockedReason }]);
+      setNewBlockedDate('');
+      setNewBlockedReason('');
+    } catch (e) {
+      console.warn('Failed to block date:', e);
+    }
+  };
+
+  const removeBlockedDate = async (date) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      await fetch(`${config.API_BASE_URL}/api/blocked-dates/${date}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setBlockedDates(prev => prev.filter(d => d.blocked_date !== date));
+    } catch (e) {
+      console.warn('Failed to unblock date:', e);
+    }
   };
 
   // Handle feedback submission
@@ -400,6 +507,137 @@ const SettingsMain = ({
               className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Ajouter
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* AVAILABILITY MANAGER */}
+      <div className={`${currentTheme.surface} rounded-2xl p-6 sm:p-8 shadow-xl border ${currentTheme.border}`}>
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="p-2 sm:p-3 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 shadow-md">
+            <Clock className="text-white" size={20} />
+          </div>
+          <div>
+            <h3 className={`text-2xl font-bold ${currentTheme.text}`}>Disponibilités</h3>
+            <p className={`${currentTheme.textSecondary} text-sm mt-1`}>
+              Gérez vos horaires d'ouverture
+            </p>
+          </div>
+        </div>
+
+        {/* Days */}
+        <div className="space-y-3 mb-6">
+          {availability.map(day => (
+            <div key={day.day_of_week} className={`${currentTheme.glass} rounded-xl p-4 border ${currentTheme.border}`}>
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                {/* Day name + toggle */}
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => updateDaySetting(day.day_of_week, 'is_open', !day.is_open)}
+                    className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                      day.is_open ? 'bg-green-500' : 'bg-gray-400'
+                    }`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-300 ${
+                      day.is_open ? 'left-7' : 'left-1'
+                    }`} />
+                  </button>
+                  <span className={`font-bold w-24 ${currentTheme.text}`}>
+                    {DAYS[day.day_of_week]}
+                  </span>
+                  {!day.is_open && (
+                    <span className="text-xs text-red-500 font-medium">Fermé</span>
+                  )}
+                </div>
+
+                {/* Time inputs */}
+                {day.is_open && (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="time"
+                      value={day.open_time}
+                      onChange={(e) => updateDaySetting(day.day_of_week, 'open_time', e.target.value)}
+                      className={`px-3 py-2 rounded-lg border ${currentTheme.border} ${currentTheme.text} bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50`}
+                    />
+                    <span className={`${currentTheme.textSecondary} text-sm`}>→</span>
+                    <input
+                      type="time"
+                      value={day.close_time}
+                      onChange={(e) => updateDaySetting(day.day_of_week, 'close_time', e.target.value)}
+                      className={`px-3 py-2 rounded-lg border ${currentTheme.border} ${currentTheme.text} bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50`}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Save button */}
+        <button
+          onClick={saveAvailability}
+          disabled={availabilityLoading}
+          className={`w-full py-4 rounded-xl font-bold transition-all ${
+            availabilitySaved
+              ? 'bg-green-500 text-white'
+              : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:opacity-90'
+          } disabled:opacity-50`}
+        >
+          {availabilitySaved ? '✅ Sauvegardé!' : availabilityLoading ? 'Sauvegarde...' : 'Sauvegarder les horaires'}
+        </button>
+
+        {/* Blocked dates */}
+        <div className="mt-8">
+          <h4 className={`font-bold ${currentTheme.text} mb-4 flex items-center space-x-2`}>
+            <span>🚫</span>
+            <span>Jours fermés exceptionnels</span>
+          </h4>
+
+          {blockedDates.length > 0 && (
+            <div className="space-y-2 mb-4">
+              {blockedDates.map((bd, i) => (
+                <div key={i} className={`${currentTheme.glass} rounded-xl p-3 border ${currentTheme.border} flex items-center justify-between`}>
+                  <div>
+                    <p className={`font-medium text-sm ${currentTheme.text}`}>
+                      {new Date(bd.blocked_date).toLocaleDateString('fr-FR')}
+                    </p>
+                    {bd.reason && (
+                      <p className={`text-xs ${currentTheme.textSecondary}`}>{bd.reason}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => removeBlockedDate(bd.blocked_date)}
+                    className="p-2 rounded-lg bg-red-500/20 text-red-500 hover:bg-red-500/40 transition-all"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <input
+              type="date"
+              value={newBlockedDate}
+              onChange={(e) => setNewBlockedDate(e.target.value)}
+              className={`w-full px-4 py-3 rounded-xl border ${currentTheme.border} ${currentTheme.text} bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50`}
+              style={{ colorScheme: 'dark' }}
+            />
+            <input
+              type="text"
+              value={newBlockedReason}
+              onChange={(e) => setNewBlockedReason(e.target.value)}
+              placeholder="Raison (optionnel): Férié, Vacances..."
+              className={`w-full px-4 py-3 rounded-xl border ${currentTheme.border} ${currentTheme.text} bg-transparent text-sm focus:outline-none`}
+            />
+            <button
+              onClick={addBlockedDate}
+              disabled={!newBlockedDate}
+              className="w-full py-3 rounded-xl bg-red-500/20 text-red-500 font-bold hover:bg-red-500/30 transition-all disabled:opacity-40"
+            >
+              🚫 Bloquer ce jour
             </button>
           </div>
         </div>
