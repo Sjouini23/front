@@ -1,12 +1,91 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sun, Moon, LogOut, Users, Plus, Edit3, Trash2 } from 'lucide-react';
 import { LUXURY_THEMES_2025 } from '../../../utils/luxuryThemes';
+import config from '../../../config.local';
 
 const MobileSettings = ({ theme, setTheme, staffMembers = {}, addStaff, renameStaff, deleteStaff, onLogout, onSwitchDevice }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   const [newName, setNewName] = useState('');
   const [editingKey, setEditingKey] = useState(null);
   const [editingName, setEditingName] = useState('');
+  const [availability, setAvailability] = useState([]);
+  const [blockedDates, setBlockedDates] = useState([]);
+  const [newBlockedDate, setNewBlockedDate] = useState('');
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilitySaved, setAvailabilitySaved] = useState(false);
+
+  const DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    
+    fetch(`${config.API_BASE_URL}/api/availability`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).then(r => r.json()).then(setAvailability).catch(console.warn);
+
+    fetch(`${config.API_BASE_URL}/api/blocked-dates`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).then(r => r.json()).then(setBlockedDates).catch(console.warn);
+  }, []);
+
+  const updateDaySetting = (dayOfWeek, field, value) => {
+    setAvailability(prev => prev.map(day =>
+      day.day_of_week === dayOfWeek ? { ...day, [field]: value } : day
+    ));
+  };
+
+  const saveAvailability = async () => {
+    try {
+      setAvailabilityLoading(true);
+      const token = localStorage.getItem('auth_token');
+      await fetch(`${config.API_BASE_URL}/api/availability`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ settings: availability })
+      });
+      setAvailabilitySaved(true);
+      setTimeout(() => setAvailabilitySaved(false), 3000);
+    } catch (e) {
+      console.warn(e);
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
+
+  const addBlockedDate = async () => {
+    if (!newBlockedDate) return;
+    try {
+      const token = localStorage.getItem('auth_token');
+      await fetch(`${config.API_BASE_URL}/api/blocked-dates`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ date: newBlockedDate })
+      });
+      setBlockedDates(prev => [...prev, { blocked_date: newBlockedDate }]);
+      setNewBlockedDate('');
+    } catch (e) {
+      console.warn(e);
+    }
+  };
+
+  const removeBlockedDate = async (date) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      await fetch(`${config.API_BASE_URL}/api/blocked-dates/${date}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setBlockedDates(prev => prev.filter(d => d.blocked_date !== date));
+    } catch (e) {
+      console.warn(e);
+    }
+  };
 
   return (
     <div className="pb-6">
@@ -105,6 +184,99 @@ const MobileSettings = ({ theme, setTheme, staffMembers = {}, addStaff, renameSt
             >
               <Plus size={18} />
             </button>
+          </div>
+        </div>
+
+        {/* AVAILABILITY */}
+        <div className={`${currentTheme.surface} rounded-2xl p-4 border ${currentTheme.border}`}>
+          <h2 className={`font-bold ${currentTheme.text} mb-4 flex items-center space-x-2`}>
+            <span>🕐</span>
+            <span>Horaires d'ouverture</span>
+          </h2>
+
+          <div className="space-y-2 mb-4">
+            {availability.map(day => (
+              <div key={day.day_of_week} className={`${currentTheme.glass} rounded-xl p-3 border ${currentTheme.border}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`font-semibold text-sm ${currentTheme.text}`}>
+                    {DAYS[day.day_of_week]}
+                  </span>
+                  <button
+                    onClick={() => updateDaySetting(day.day_of_week, 'is_open', !day.is_open)}
+                    className={`relative w-11 h-6 rounded-full transition-all duration-300 ${
+                      day.is_open ? 'bg-green-500' : 'bg-gray-400'
+                    }`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-300 ${
+                      day.is_open ? 'left-6' : 'left-1'
+                    }`} />
+                  </button>
+                </div>
+                {day.is_open && (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="time"
+                      value={day.open_time}
+                      onChange={(e) => updateDaySetting(day.day_of_week, 'open_time', e.target.value)}
+                      className={`flex-1 px-2 py-1.5 rounded-lg border ${currentTheme.border} ${currentTheme.text} bg-transparent text-sm focus:outline-none`}
+                    />
+                    <span className={`text-xs ${currentTheme.textSecondary}`}>→</span>
+                    <input
+                      type="time"
+                      value={day.close_time}
+                      onChange={(e) => updateDaySetting(day.day_of_week, 'close_time', e.target.value)}
+                      className={`flex-1 px-2 py-1.5 rounded-lg border ${currentTheme.border} ${currentTheme.text} bg-transparent text-sm focus:outline-none`}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={saveAvailability}
+            disabled={availabilityLoading}
+            className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${
+              availabilitySaved
+                ? 'bg-green-500 text-white'
+                : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
+            } disabled:opacity-50 active:scale-95`}
+          >
+            {availabilitySaved ? '✅ Sauvegardé!' : 'Sauvegarder'}
+          </button>
+
+          {/* Blocked dates */}
+          <div className="mt-4">
+            <p className={`text-sm font-bold ${currentTheme.text} mb-2`}>🚫 Jours fermés</p>
+            {blockedDates.map((bd, i) => (
+              <div key={i} className={`flex items-center justify-between p-2 rounded-lg ${currentTheme.glass} border ${currentTheme.border} mb-2`}>
+                <span className={`text-sm ${currentTheme.text}`}>
+                  {new Date(bd.blocked_date).toLocaleDateString('fr-FR')}
+                </span>
+                <button
+                  onClick={() => removeBlockedDate(bd.blocked_date)}
+                  className="text-red-500 text-xs font-bold px-2 py-1 rounded-lg bg-red-500/20 active:scale-95"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <div className="flex space-x-2 mt-2">
+              <input
+                type="date"
+                value={newBlockedDate}
+                onChange={(e) => setNewBlockedDate(e.target.value)}
+                className={`flex-1 px-3 py-2 rounded-xl border ${currentTheme.border} ${currentTheme.text} bg-transparent text-sm focus:outline-none`}
+                style={{ colorScheme: 'dark' }}
+              />
+              <button
+                onClick={addBlockedDate}
+                disabled={!newBlockedDate}
+                className="px-4 py-2 rounded-xl bg-red-500/20 text-red-500 font-bold text-sm disabled:opacity-40 active:scale-95"
+              >
+                🚫
+              </button>
+            </div>
           </div>
         </div>
 
