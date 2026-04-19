@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Edit3, Trash2, Phone, CheckCircle, Clock, FileText } from 'lucide-react';
+import { Edit3, Trash2, Phone, CheckCircle, Clock, FileText, X } from 'lucide-react';
 import { VEHICLE_TYPES } from '../../utils/configs';
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
 import { isDateBeforeToday, formatDateLocal } from '../../utils/dateUtils';
@@ -367,10 +367,14 @@ const formatDuration = (startTime, endTime = null, totalDuration = null) => {
                       </button>
                       <button
                         onClick={() => onDeleteService(service.id)}
-                        className="p-2 rounded-lg bg-red-500/20 text-red-600 hover:bg-red-500/30 transition-all duration-300 hover:scale-110 shadow-md focus:outline-none focus:ring-1 focus:ring-red-500/50 hover:shadow-lg"
-                        aria-label={`Supprimer le service ${service.licensePlate}`}
+                        className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 shadow-md ${
+                          service.isReservation
+                            ? 'bg-orange-500/20 text-orange-500 hover:bg-orange-500/30'
+                            : 'bg-red-500/20 text-red-600 hover:bg-red-500/30'
+                        }`}
+                        aria-label={service.isReservation ? 'Annuler la réservation' : `Supprimer le service ${service.licensePlate}`}
                       >
-                        <Trash2 size={14} />
+                        {service.isReservation ? <X size={14} /> : <Trash2 size={14} />}
                       </button>
                     </div>
                   </td>

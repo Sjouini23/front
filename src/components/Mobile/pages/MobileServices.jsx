@@ -183,10 +183,14 @@ const MobileServices = ({ filteredServices, theme, onEdit, onDelete, onFinish, o
                       </button>
                       <button
                         onClick={() => { onDelete(s.id); setExpandedId(null); }}
-                        className="flex-1 py-3 rounded-xl bg-red-500/20 text-red-500 font-bold text-sm flex items-center justify-center space-x-1 active:scale-95"
+                        className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center space-x-1 active:scale-95 ${
+                          s.isReservation
+                            ? 'bg-orange-500/20 text-orange-500'
+                            : 'bg-red-500/20 text-red-500'
+                        }`}
                       >
                         <Trash2 size={16} />
-                        <span>Supprimer</span>
+                        <span>{s.isReservation ? 'Annuler' : 'Supprimer'}</span>
                       </button>
                     </div>
                   </div>

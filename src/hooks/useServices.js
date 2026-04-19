@@ -282,18 +282,32 @@ export const useServices = (addNotification) => {
 
   const handleDeleteService = useCallback(async (serviceId) => {
     try {
-      // Skip if invalid or if it's a reservation
-      if (!serviceId || serviceId.toString().startsWith('res-')) {
+      if (!serviceId) return;
+      
+      // For reservations — cancel instead of delete
+      if (serviceId.toString().startsWith('res-')) {
+        const realId = serviceId.toString().replace('res-', '');
+        const token = localStorage.getItem('auth_token');
+        await fetch(`${config.API_BASE_URL}/api/reservations/${realId}/status`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: 'cancelled' })
+        });
+        await fetchServices();
+        addNotification('✅ Réservation annulée', 'La réservation a été annulée', 'success');
         return;
       }
 
-      const token = localStorage.getItem('auth_token');
+      // Normal service delete
+      if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) return;
       
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`${config.API_ENDPOINTS.WASHES}/${serviceId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (!response.ok) {
@@ -303,7 +317,7 @@ export const useServices = (addNotification) => {
 
       await fetchServices();
       addNotification('✅ Service Supprimé', 'Service supprimé avec succès', 'success');
-      
+
     } catch (error) {
       console.error('❌ Error deleting service:', error);
       addNotification('❌ Erreur', error.message, 'error');
