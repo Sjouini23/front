@@ -267,6 +267,11 @@ export const useServices = (addNotification) => {
         throw new Error('Service invalide pour modification');
       }
       
+      // Don't edit reservations
+      if (service.id?.toString().startsWith('res-')) {
+        return;
+      }
+      
       setEditingService(service);
       setShowServiceForm(true);
     } catch (error) {
@@ -279,6 +284,12 @@ export const useServices = (addNotification) => {
     try {
       if (!serviceId) {
         throw new Error('ID de service invalide');
+      }
+
+      // Don't try to delete reservations from washes table
+      if (serviceId.toString().startsWith('res-')) {
+        console.warn('Cannot delete reservation from services list');
+        return;
       }
 
       if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) {
@@ -367,8 +378,9 @@ const exportToCSV = useCallback(() => {
 // Replace the finishService function in useServices.js (around line 180-210):
 
 const finishService = useCallback(async (serviceId) => {
+  // Skip reservations (they have res- prefixed IDs)
+  if (serviceId?.toString().startsWith('res-')) return;
 
-  
   try {
     const token = localStorage.getItem('auth_token');
     
