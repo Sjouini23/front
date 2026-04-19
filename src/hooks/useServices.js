@@ -282,17 +282,8 @@ export const useServices = (addNotification) => {
 
   const handleDeleteService = useCallback(async (serviceId) => {
     try {
-      if (!serviceId) {
-        throw new Error('ID de service invalide');
-      }
-
-      // Don't try to delete reservations from washes table
-      if (serviceId.toString().startsWith('res-')) {
-        console.warn('Cannot delete reservation from services list');
-        return;
-      }
-
-      if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) {
+      // Skip if invalid or if it's a reservation
+      if (!serviceId || serviceId.toString().startsWith('res-')) {
         return;
       }
 
