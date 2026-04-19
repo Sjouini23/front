@@ -196,7 +196,7 @@ const formatDuration = (startTime, endTime = null, totalDuration = null) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {sortedServices.map((service) => {
+            {sortedServices.slice(0, 100).map((service) => {
               const isPastDate = isDateBeforeToday(service.date);
               const shouldShowAsFinished = isPastDate || service.timeFinished || !service.isActive;
               const averageTime = isPastDate && !service.timeFinished ? getServiceTypeAverage(service.serviceType) : null;
@@ -375,6 +375,12 @@ const formatDuration = (startTime, endTime = null, totalDuration = null) => {
           </tbody>
         </table>
       </div>
+      {sortedServices.length > 100 && (
+        <div className={`text-center p-4 ${currentTheme.textSecondary} text-sm`}>
+          Affichage de 100 sur {sortedServices.length} services. 
+          Utilisez les filtres pour affiner.
+        </div>
+      )}
     </div>
   );
 };
