@@ -82,7 +82,9 @@ export const useServices = (addNotification) => {
       
       if (safeServices.length === 0) return [];
 
-      return safeServices.filter(service => {
+      return [...safeServices]
+        .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
+        .filter(service => {
         try {
           // Search filter
           const matchesSearch = !searchTerm || 
