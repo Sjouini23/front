@@ -78,7 +78,14 @@ const MobileServices = ({ filteredServices, theme, onEdit, onDelete, onFinish, o
                       </span>
                     </div>
                     <div>
-                      <p className={`font-bold ${currentTheme.text}`}>{s.licensePlate}</p>
+                      <p className={`font-bold ${currentTheme.text} flex items-center space-x-2`}>
+                        <span>{s.licensePlate}</span>
+                        {s.isReservation && (
+                          <span className="text-xs bg-blue-500/20 text-blue-600 px-2 py-0.5 rounded-full font-bold">
+                            📅 Résa
+                          </span>
+                        )}
+                      </p>
                       <p className={`text-xs ${currentTheme.textSecondary}`}>{s.serviceType} • {s.totalPrice} DT</p>
                     </div>
                   </div>

@@ -206,8 +206,13 @@ const formatDuration = (startTime, endTime = null, totalDuration = null) => {
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
                       <div>
-                        <div className={`text-base font-bold ${currentTheme.text}`}>
-                          {service.licensePlate}
+                        <div className={`text-base font-bold ${currentTheme.text} flex items-center space-x-2`}>
+                          <span>{service.licensePlate}</span>
+                          {service.isReservation && (
+                            <span className="text-xs bg-blue-500/20 text-blue-600 px-2 py-0.5 rounded-full font-bold border border-blue-500/30">
+                              📅 Réservation
+                            </span>
+                          )}
                         </div>
                         <div className={`${currentTheme.textSecondary} text-sm`}>
                           {service.vehicleBrand} {service.vehicleModel}
