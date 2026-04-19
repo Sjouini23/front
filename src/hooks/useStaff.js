@@ -1,28 +1,53 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import config from '../config.local';
 
 const DEFAULT_STAFF = {
   bilal: { name: 'Bilal', color: 'blue', icon: '👨‍🔧', emoji: '💪' },
   ayoub: { name: 'Ayoub', color: 'green', icon: '👨‍💼', emoji: '🎯' }
 };
 
-const STORAGE_KEY = 'carwash_staff_v1';
-
-const loadStaff = () => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return DEFAULT_STAFF;
-    const parsed = JSON.parse(stored);
-    if (typeof parsed !== 'object' || Object.keys(parsed).length === 0) {
-      return DEFAULT_STAFF;
-    }
-    return parsed;
-  } catch {
-    return DEFAULT_STAFF;
-  }
-};
-
 export const useStaff = () => {
-  const [staffMembers, setStaffMembersState] = useState(loadStaff);
+  const [staffMembers, setStaffMembersState] = useState(DEFAULT_STAFF);
+
+  // Load from backend on mount
+  useEffect(() => {
+    const fetchStaff = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+        const response = await fetch(`${config.API_BASE_URL}/api/staff`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data && Object.keys(data).length > 0) {
+            setStaffMembersState(data);
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to fetch staff, using defaults:', error);
+      }
+    };
+    fetchStaff();
+  }, []);
+
+  // Save to backend
+  const saveToBackend = useCallback(async (updated) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+      await fetch(`${config.API_BASE_URL}/api/staff`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updated)
+      });
+    } catch (error) {
+      console.warn('Failed to save staff to backend:', error);
+    }
+  }, []);
 
   const addStaff = useCallback((name) => {
     const trimmed = name.trim();
@@ -38,10 +63,10 @@ export const useStaff = () => {
         ...prev,
         [key]: { name: trimmed, color: 'blue', icon: '👨‍🔧', emoji: '💪' }
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      saveToBackend(updated);
       return updated;
     });
-  }, []);
+  }, [saveToBackend]);
 
   const renameStaff = useCallback((key, newName) => {
     const trimmed = newName.trim();
@@ -52,20 +77,20 @@ export const useStaff = () => {
         ...prev,
         [key]: { ...prev[key], name: trimmed }
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      saveToBackend(updated);
       return updated;
     });
-  }, []);
+  }, [saveToBackend]);
 
   const deleteStaff = useCallback((key) => {
     setStaffMembersState(prev => {
       if (Object.keys(prev).length <= 1) return prev;
       const updated = { ...prev };
       delete updated[key];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      saveToBackend(updated);
       return updated;
     });
-  }, []);
+  }, [saveToBackend]);
 
   return { staffMembers, addStaff, renameStaff, deleteStaff };
 };
