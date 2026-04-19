@@ -1,5 +1,5 @@
 export const openWhatsAppInvoice = (service, staffMembers = {}) => {
-  const phone = service.phone || service.phoneNumber;
+  const phone = service.phone || service.phoneNumber || service.client_phone;
   if (!phone) return;
 
   // Clean and format phone number for Tunisia

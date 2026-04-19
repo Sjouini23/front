@@ -331,7 +331,7 @@ const formatDuration = (startTime, endTime = null, totalDuration = null) => {
   <CheckCircle size={14} />
 </button>
                       )}
-                      {(service.phone || service.phoneNumber) && (
+                      {(service.phone || service.phoneNumber || service.client_phone) && (
                         <button
                           onClick={() => {
                             openWhatsAppInvoice(service, staffMembers);

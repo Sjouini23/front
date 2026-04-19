@@ -140,7 +140,7 @@ const MobileServices = ({ filteredServices, theme, onEdit, onDelete, onFinish, o
                           <span>Terminer</span>
                         </button>
                       )}
-                      {(s.phone || s.phoneNumber) && (
+                      {(s.phone || s.phoneNumber || s.client_phone) && (
                         <button
                           onClick={() => {
                             openWhatsAppInvoice(s, staffMembers);
