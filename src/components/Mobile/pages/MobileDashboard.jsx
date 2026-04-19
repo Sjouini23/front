@@ -1,11 +1,32 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Car, DollarSign, Clock, TrendingUp, Plus } from 'lucide-react';
 import { LUXURY_THEMES_2025 } from '../../../utils/luxuryThemes';
 import { isDateBeforeToday } from '../../../utils/dateUtils';
+import config from '../../../config.local';
 
 const MobileDashboard = ({ services, theme, onNewService, staffMembers = {} }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   const today = new Date().toISOString().split('T')[0];
+  const [reservations, setReservations] = useState([]);
+
+  useEffect(() => {
+    const fetchRes = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch(`${config.API_BASE_URL}/api/reservations`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setReservations(data
+            .filter(r => r.status === 'pending' && r.reservation_date >= today)
+            .slice(0, 3)
+          );
+        }
+      } catch (e) {}
+    };
+    fetchRes();
+  }, []);
 
   const todayServices = services.filter(s => s.date === today);
   const activeServices = services.filter(s =>
@@ -31,6 +52,39 @@ const MobileDashboard = ({ services, theme, onNewService, staffMembers = {} }) =
           {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
       </div>
+
+      {/* Reservations alert */}
+      {reservations.length > 0 && (
+        <div className="px-4 mb-4">
+          <div className={`${currentTheme.surface} rounded-2xl p-4 border border-blue-500/50 shadow-lg`}>
+            <div className="flex items-center space-x-2 mb-3">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              <h2 className={`font-bold ${currentTheme.text} text-base`}>
+                📅 {reservations.length} Réservation(s)
+              </h2>
+            </div>
+            {reservations.map(r => (
+              <div key={r.id} className={`${currentTheme.glass} rounded-xl p-3 mb-2 border ${currentTheme.border}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`font-bold text-sm ${currentTheme.text}`}>
+                      {r.reservation_time} — {r.license_plate}
+                    </p>
+                    <p className={`text-xs ${currentTheme.textSecondary}`}>
+                      {r.customer_name} • {r.confirmation_code}
+                    </p>
+                  </div>
+                  <span className="text-xs bg-blue-500/20 text-blue-600 px-2 py-1 rounded-full font-bold">
+                    {r.reservation_date.split('T')[0] === today ? "Auj." :
+                      new Date(r.reservation_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+                    }
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="px-4 grid grid-cols-2 gap-3 mb-6">

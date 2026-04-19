@@ -22,7 +22,7 @@ import MoneyAIDashboard from './components/shared/MoneyAIDashboard';
 // NEW SPLIT COMPONENTS
 import { LoginForm } from './components/Auth';
 import { Header } from './components/Layout';
-import { PersonalAIAssistant } from './components/Dashboard';
+import { PersonalAIAssistant, ReservationsWidget } from './components/Dashboard';
 import { ServicesList } from './components/Services';
 import { SettingsMain } from './components/Settings';
 import TVDisplaySystem from './components/TVDisplay/TVDisplaySystem';
@@ -241,20 +241,21 @@ if (isTVRoute) {
           }>
             {activeTab === 'dashboard' && (
               <div className="space-y-4">
-                <div className="flex flex-col md:flex-row md:justify-between md:items-center space-y-3 md:space-y-0">
-                  <div>
-                  
-                    <p className={`${currentTheme.textSecondary} text-sm`}>
-                    </p>
-                  </div>
+                <div className="w-full max-w-screen-xl mx-auto px-4 sm:px-6 space-y-4">
+                  {/* Reservations Widget — shows only when there are pending reservations */}
+                  <ReservationsWidget 
+                    theme={theme}
+                    onGoToServices={() => setActiveTab('services')}
+                  />
+                  {/* AI Assistant */}
+                  <PersonalAIAssistant 
+                    services={serviceData.services} 
+                    theme={theme} 
+                    staffMembers={staffMembers} 
+                  />
                 </div>
-                
-                {/* Multi-Agent Intelligence Grid */}
-                <div className="w-full max-w-screen-xl mx-auto px-4 sm:px-6">
-                   <PersonalAIAssistant services={serviceData.services} theme={theme} staffMembers={staffMembers} />
-                  </div>
               </div>
-)}
+            )}
             {activeTab === 'money' && (
               <MoneyAIDashboard services={serviceData.services} theme={theme} staffMembers={staffMembers} />
             )}
