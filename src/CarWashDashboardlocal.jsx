@@ -161,6 +161,7 @@ if (isTVRoute) {
               addNotification={addNotification}
               serviceConfig={serviceData.serviceConfig}
               staffMembers={staffMembers}
+              services={serviceData.services}
             />
           </Suspense>
         )}
@@ -219,6 +220,7 @@ if (isTVRoute) {
               addNotification={addNotification}
               serviceConfig={serviceData.serviceConfig}
               staffMembers={staffMembers}
+              services={serviceData.services}
             />
           </Suspense>
         )}

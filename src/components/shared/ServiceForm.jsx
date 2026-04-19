@@ -75,10 +75,13 @@ const AppleLuxuryServiceForm = React.memo(({
   theme,
   addNotification,
   serviceConfig,
-  staffMembers = {}
+  staffMembers = {},
+  services = []
 }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   const [showTaxiMode, setShowTaxiMode] = useState(false);
+  const [plateSuggestions, setPlateSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [formData, setFormData] = useState(() => existingService || {
     licensePlate: '',
     plateType: 'tunisienne',
@@ -118,6 +121,59 @@ const AppleLuxuryServiceForm = React.memo(({
       brand.toLowerCase().includes(searchTerm)
     );
   }, [brandSearch]);
+
+  const searchPlateHistory = useCallback((value) => {
+    if (!value || value.length < 3) {
+      setPlateSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const search = value.replace(/\s+/g, '').toUpperCase();
+    const getLast4 = (plate) => plate?.replace(/\s+/g, '').slice(-4) || '';
+    const searchLast4 = search.slice(-4);
+
+    // Get unique plates from services history
+    const seen = new Set();
+    const matches = [];
+
+    // Sort by most recent first
+    const sorted = [...(services || [])].sort(
+      (a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
+    );
+
+    sorted.forEach(service => {
+      const plate = service.licensePlate;
+      if (!plate || seen.has(plate)) return;
+      seen.add(plate);
+
+      const plateCleaned = plate.replace(/\s+/g, '').toUpperCase();
+      const plateLast4 = getLast4(plate);
+
+      const isExactMatch = plateCleaned === search;
+      const isContains = plateCleaned.includes(search) || search.includes(plateCleaned);
+      const isLast4Match = searchLast4.length === 4 && plateLast4 === searchLast4;
+
+      if (isExactMatch || isContains || isLast4Match) {
+        matches.push({
+          plate,
+          vehicleBrand: service.vehicleBrand || '',
+          vehicleModel: service.vehicleModel || '',
+          vehicleColor: service.vehicleColor || '',
+          vehicleType: service.vehicleType || 'voiture',
+          phone: service.phone || '',
+          lastVisit: service.date || service.createdAt,
+          isExact: isExactMatch
+        });
+      }
+    });
+
+    // Exact matches first
+    matches.sort((a, b) => (b.isExact ? 1 : 0) - (a.isExact ? 1 : 0));
+
+    setPlateSuggestions(matches.slice(0, 5));
+    setShowSuggestions(matches.length > 0);
+  }, [services]);
   
   // FIXED price calculation using serviceConfig from settings + manual adjustment
   // Add this temporarily to debug
@@ -444,6 +500,18 @@ onSubmit(sanitizedData);
     }));
   }, []);
 
+  // Autofill form from plate suggestion
+  const applyPlateSuggestion = useCallback((suggestion) => {
+    updateFormField('licensePlate', suggestion.plate);
+    if (suggestion.vehicleBrand) updateFormField('vehicleBrand', suggestion.vehicleBrand);
+    if (suggestion.vehicleModel) updateFormField('vehicleModel', suggestion.vehicleModel);
+    if (suggestion.vehicleColor) updateFormField('vehicleColor', suggestion.vehicleColor);
+    if (suggestion.vehicleType) updateFormField('vehicleType', suggestion.vehicleType);
+    if (suggestion.phone) updateFormField('phone', suggestion.phone);
+    setShowSuggestions(false);
+    setPlateSuggestions([]);
+  }, [updateFormField]);
+
   // NEW: Handle taxi mode toggle
   const handleTaxiMode = useCallback(() => {
     setShowTaxiMode(true);
@@ -664,17 +732,77 @@ onSubmit(sanitizedData);
                   <label htmlFor="licensePlate" className={`block text-xs font-medium ${currentTheme.textSecondary} uppercase`}>
                     Plaque d'immatriculation *
                   </label>
-                  <input
-                    id="licensePlate"
-                    type="text"
-                    value={formData.licensePlate}
-                    onChange={(e) => updateFormField('licensePlate', e.target.value.toUpperCase())}
-                    placeholder={formData.plateType === 'tunisienne' ? '123 TUN 4567' : 'ABC-1234'}
-                    className={`w-full px-3 py-2 rounded-lg ${currentTheme.glass} ${
-                      validationErrors.licensePlate ? 'border-red-500' : currentTheme.border
-                    } ${currentTheme.text} placeholder-gray-400 text-sm font-mono text-center transition-all duration-200 hover:shadow-md focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500`}
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      id="licensePlate"
+                      type="text"
+                      value={formData.licensePlate}
+                      onChange={(e) => {
+                        const val = e.target.value.toUpperCase();
+                        updateFormField('licensePlate', val);
+                        searchPlateHistory(val);
+                      }}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                      onFocus={() => formData.licensePlate.length >= 3 && setShowSuggestions(plateSuggestions.length > 0)}
+                      placeholder={formData.plateType === 'tunisienne' ? '123 TU 4567' : 'ABC-1234'}
+                      className={`w-full px-3 py-2 rounded-lg ${currentTheme.glass} ${
+                        validationErrors.licensePlate ?
+                        'border-red-500 bg-red-500/10' :
+                        `${currentTheme.border} focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500`
+                      } ${currentTheme.text} placeholder-gray-400 text-sm transition-all duration-200 hover:shadow-md`}
+                      maxLength={20}
+                      autoComplete="off"
+                      required
+                    />
+
+                    {/* Suggestions Dropdown */}
+                    {showSuggestions && plateSuggestions.length > 0 && (
+                      <div className={`absolute z-50 w-full mt-1 rounded-xl shadow-2xl border ${currentTheme.border} ${currentTheme.surface} overflow-hidden`}>
+                        {plateSuggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onMouseDown={() => applyPlateSuggestion(suggestion)}
+                            className={`w-full px-4 py-3 text-left hover:bg-blue-500/10 transition-all border-b last:border-b-0 ${currentTheme.border}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <span className="text-lg">
+                                  {suggestion.vehicleType === 'taxi' ? '🚕' :
+                                   suggestion.vehicleType === 'moto' ? '🏍️' :
+                                   suggestion.vehicleType === 'camion' ? '🚛' : '🚗'}
+                                </span>
+                                <div>
+                                  <p className={`font-bold text-sm ${currentTheme.text}`}>
+                                    {suggestion.plate}
+                                    {suggestion.isExact && (
+                                      <span className="ml-2 text-xs bg-green-500/20 text-green-600 px-2 py-0.5 rounded-full">
+                                        ✓ Exact
+                                      </span>
+                                    )}
+                                  </p>
+                                  <p className={`text-xs ${currentTheme.textSecondary}`}>
+                                    {[suggestion.vehicleBrand, suggestion.vehicleModel, suggestion.vehicleColor]
+                                      .filter(Boolean).join(' • ') || 'Aucun détail'}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                {suggestion.phone && (
+                                  <p className="text-xs text-blue-500">📞 {suggestion.phone}</p>
+                                )}
+                                {suggestion.lastVisit && (
+                                  <p className={`text-xs ${currentTheme.textSecondary}`}>
+                                    {new Date(suggestion.lastVisit).toLocaleDateString('fr-FR')}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   {validationErrors.licensePlate && (
                     <p className="text-red-500 text-xs flex items-center space-x-1">
                       <AlertCircle size={12} />
