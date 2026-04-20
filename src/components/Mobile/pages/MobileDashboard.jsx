@@ -64,7 +64,7 @@ const MobileDashboard = ({ services, theme, onNewService, staffMembers = {} }) =
               </h2>
             </div>
             {reservations.map(r => {
-              const tunisiaToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Tunis' });
+              const tunisiaToday = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Tunis" });
               return (
               <div key={r.id} className={`${currentTheme.glass} rounded-xl p-3 mb-2 border ${currentTheme.border}`}>
                 <div className="flex items-center justify-between">
