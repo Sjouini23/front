@@ -19,7 +19,7 @@ const MobileDashboard = ({ services, theme, onNewService, staffMembers = {} }) =
         if (res.ok) {
           const data = await res.json();
           setReservations(data
-            .filter(r => r.status === 'pending' && r.reservation_date >= today)
+            .filter(r => r.status === 'pending' || r.status === 'confirmed')
             .slice(0, 3)
           );
         }

@@ -19,11 +19,17 @@ const ReservationsWidget = ({ theme, onStartService }) => {
   const fetchReservations = async () => {
     try {
       const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.warn('No token found');
+        setLoading(false);
+        return;
+      }
       const res = await fetch(`${config.API_BASE_URL}/api/reservations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
+        console.log('Widget fetched:', data.length, 'reservations');
         const relevant = data
           .filter(r => r.status === 'pending' || r.status === 'confirmed')
           .sort((a, b) => {
@@ -33,6 +39,7 @@ const ReservationsWidget = ({ theme, onStartService }) => {
             return a.reservation_time.localeCompare(b.reservation_time);
           })
           .slice(0, 5);
+        console.log('Widget relevant:', relevant.length, 'after filter');
         setReservations(relevant);
       }
     } catch (e) {
