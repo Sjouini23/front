@@ -70,10 +70,10 @@ const MobileDashboard = ({ services, theme, onNewService, staffMembers = {} }) =
                 <div className="flex items-center justify-between">
                   <div>
                     <p className={`font-bold text-sm ${currentTheme.text}`}>
-                      {r.reservation_time} — {r.license_plate}
+                      {r.reservation_time} - {r.license_plate}
                     </p>
                     <p className={`text-xs ${currentTheme.textSecondary}`}>
-                      {r.customer_name} • {r.confirmation_code}
+                      {r.customer_name} | {r.confirmation_code}
                     </p>
                   </div>
                   <span className="text-xs bg-blue-500/20 text-blue-600 px-2 py-1 rounded-full font-bold">
