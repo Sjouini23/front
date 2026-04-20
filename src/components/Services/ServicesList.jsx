@@ -229,7 +229,8 @@ const ServicesList = ({
             reservations.map(r => {
               const dateStr = r.reservation_date.split('T')[0];
               const today = new Date().toISOString().split('T')[0];
-              const isToday = dateStr === today;
+              const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+              const isToday = dateStr === today || dateStr === yesterday;
               const displayDate = isToday ? "Aujourd'hui" :
                 new Date(dateStr + 'T12:00:00').toLocaleDateString('fr-FR', {
                   weekday: 'long', day: 'numeric', month: 'long'

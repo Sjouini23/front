@@ -305,7 +305,8 @@ const MobileServices = ({ filteredServices, theme, onEdit, onDelete, onFinish, o
             reservations.map(r => {
               const dateStr = r.reservation_date.split('T')[0];
               const todayStr = new Date().toISOString().split('T')[0];
-              const isToday = dateStr === todayStr;
+              const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+              const isToday = dateStr === todayStr || dateStr === yesterday;
               const displayDate = isToday ? "Aujourd'hui" :
                 new Date(dateStr + 'T12:00:00').toLocaleDateString('fr-FR', {
                   weekday: 'short', day: 'numeric', month: 'short'

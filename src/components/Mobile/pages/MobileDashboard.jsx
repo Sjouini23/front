@@ -66,7 +66,8 @@ const MobileDashboard = ({ services, theme, onNewService, staffMembers = {}, onS
             {reservations.map(r => {
               const dateStr = r.reservation_date.split('T')[0];
               const todayStr = new Date().toISOString().split('T')[0];
-              const isToday = dateStr === todayStr;
+              const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+              const isToday = dateStr === todayStr || dateStr === yesterday;
               return (
                 <div key={r.id} className={`${currentTheme.glass} rounded-xl p-3 mb-2 border ${currentTheme.border}`}>
                   <div className="flex items-center justify-between">
