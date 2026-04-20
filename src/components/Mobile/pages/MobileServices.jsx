@@ -372,10 +372,3 @@ const MobileServices = ({ filteredServices, theme, onEdit, onDelete, onFinish, o
 };
 
 export default MobileServices;
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default MobileServices;
