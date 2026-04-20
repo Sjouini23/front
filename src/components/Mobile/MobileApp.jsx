@@ -33,6 +33,10 @@ const MobileApp = ({
             theme={theme}
             onNewService={onNewService}
             staffMembers={staffMembers}
+            onStartReservation={(prefilled) => {
+              window.__reservationPrefill = prefilled;
+              onNewService();
+            }}
           />
         )}
         {activeTab === 'services' && (

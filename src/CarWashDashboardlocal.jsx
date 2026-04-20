@@ -22,7 +22,7 @@ import MoneyAIDashboard from './components/shared/MoneyAIDashboard';
 // NEW SPLIT COMPONENTS
 import { LoginForm } from './components/Auth';
 import { Header } from './components/Layout';
-import { PersonalAIAssistant, ReservationsWidget } from './components/Dashboard';
+import { PersonalAIAssistant } from './components/Dashboard';
 import { ServicesList } from './components/Services';
 import { SettingsMain } from './components/Settings';
 import TVDisplaySystem from './components/TVDisplay/TVDisplaySystem';
@@ -242,17 +242,6 @@ if (isTVRoute) {
             {activeTab === 'dashboard' && (
               <div className="space-y-4">
                 <div className="w-full max-w-screen-xl mx-auto px-4 sm:px-6 space-y-4">
-                  {/* Reservations Widget — shows only when there are pending reservations */}
-                  <ReservationsWidget 
-                    theme={theme}
-                    onStartService={(prefilled) => {
-                      serviceData.setEditingService(null);
-                      // Pre-fill the form
-                      serviceData.setShowServiceForm(true);
-                      // Store prefilled data temporarily
-                      window.__reservationPrefill = prefilled;
-                    }}
-                  />
                   {/* AI Assistant */}
                   <PersonalAIAssistant 
                     services={serviceData.services} 

@@ -4,7 +4,7 @@ import { LUXURY_THEMES_2025 } from '../../../utils/luxuryThemes';
 import { isDateBeforeToday } from '../../../utils/dateUtils';
 import config from '../../../config.local';
 
-const MobileDashboard = ({ services, theme, onNewService, staffMembers = {} }) => {
+const MobileDashboard = ({ services, theme, onNewService, staffMembers = {}, onStartReservation }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   const today = new Date().toISOString().split('T')[0];
   const [reservations, setReservations] = useState([]);
@@ -56,31 +56,54 @@ const MobileDashboard = ({ services, theme, onNewService, staffMembers = {} }) =
       {/* Reservations alert */}
       {reservations.length > 0 && (
         <div className="px-4 mb-4">
-          <div className={`${currentTheme.surface} rounded-2xl p-4 border border-blue-500/50 shadow-lg`}>
+          <div className={`${currentTheme.surface} rounded-2xl p-4 border border-blue-500/30 shadow-lg`}>
             <div className="flex items-center space-x-2 mb-3">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-              <h2 className={`font-bold ${currentTheme.text} text-base`}>
-                📅 {reservations.length} Réservation(s)
+              <h2 className={`font-bold ${currentTheme.text}`}>
+                📅 {reservations.length} Réservation(s) en attente
               </h2>
             </div>
             {reservations.map(r => {
-              const tunisiaToday = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Tunis" });
+              const dateStr = r.reservation_date.split('T')[0];
+              const todayStr = new Date().toISOString().split('T')[0];
+              const isToday = dateStr === todayStr;
               return (
-              <div key={r.id} className={`${currentTheme.glass} rounded-xl p-3 mb-2 border ${currentTheme.border}`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className={`font-bold text-sm ${currentTheme.text}`}>
-                      {r.reservation_time} - {r.license_plate}
-                    </p>
-                    <p className={`text-xs ${currentTheme.textSecondary}`}>
-                      {r.customer_name} | {r.confirmation_code}
-                    </p>
+                <div key={r.id} className={`${currentTheme.glass} rounded-xl p-3 mb-2 border ${currentTheme.border}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`font-bold text-sm ${currentTheme.text}`}>
+                        {r.reservation_time} - {r.license_plate}
+                      </p>
+                      <p className={`text-xs ${currentTheme.textSecondary}`}>
+                        {r.customer_name} | {r.confirmation_code}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end space-y-1">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                        isToday ? 'bg-blue-500/20 text-blue-600' : 'bg-gray-500/20 text-gray-500'
+                      }`}>
+                        {isToday ? "Auj." : new Date(dateStr + 'T12:00:00').toLocaleDateString('fr-FR', {
+                          day: 'numeric', month: 'short'
+                        })}
+                      </span>
+                      {isToday && onStartReservation && (
+                        <button
+                          onClick={() => onStartReservation({
+                            licensePlate: r.license_plate,
+                            vehicleType: r.vehicle_type,
+                            serviceType: r.service_type,
+                            phone: r.customer_phone,
+                            notes: `Reservation ${r.confirmation_code} - ${r.customer_name}`,
+                            date: todayStr
+                          })}
+                          className="text-xs bg-green-500/20 text-green-600 px-2 py-1 rounded-lg font-bold active:scale-95"
+                        >
+                          Start
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-xs bg-blue-500/20 text-blue-600 px-2 py-1 rounded-full font-bold">
-                    {r.reservation_date.split("T")[0] === tunisiaToday ? "Auj." : new Date(r.reservation_date.split("T")[0] + "T12:00:00Z").toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                  </span>
                 </div>
-              </div>
               );
             })}
           </div>
