@@ -63,7 +63,9 @@ const MobileDashboard = ({ services, theme, onNewService, staffMembers = {} }) =
                 📅 {reservations.length} Réservation(s)
               </h2>
             </div>
-            {reservations.map(r => (
+            {reservations.map(r => {
+              const tunisiaToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Tunis' });
+              return (
               <div key={r.id} className={`${currentTheme.glass} rounded-xl p-3 mb-2 border ${currentTheme.border}`}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -75,13 +77,14 @@ const MobileDashboard = ({ services, theme, onNewService, staffMembers = {} }) =
                     </p>
                   </div>
                   <span className="text-xs bg-blue-500/20 text-blue-600 px-2 py-1 rounded-full font-bold">
-                    {r.reservation_date.split('T')[0] === today ? "Auj." :
+                    {r.reservation_date.split('T')[0] === tunisiaToday ? "Auj." :
                       new Date(r.reservation_date.split('T')[0] + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
                     }
                   </span>
                 </div>
               </div>
-            ))}
+            );
+            })
           </div>
         </div>
       )}

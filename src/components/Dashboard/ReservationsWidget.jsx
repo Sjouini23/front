@@ -26,7 +26,6 @@ const ReservationsWidget = ({ theme, onStartService }) => {
         const data = await res.json();
         const relevant = data
           .filter(r => r.status === 'pending' || r.status === 'confirmed')
-          .filter(r => r.reservation_date.split('T')[0] >= today)
           .sort((a, b) => {
             const dateA = a.reservation_date.split('T')[0];
             const dateB = b.reservation_date.split('T')[0];
@@ -111,7 +110,8 @@ const ReservationsWidget = ({ theme, onStartService }) => {
       <div className="space-y-3">
         {reservations.map(r => {
           const dateStr = r.reservation_date.split('T')[0];
-          const isToday = dateStr === today;
+          const tunisiaToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Tunis' });
+          const isToday = dateStr === tunisiaToday;
           const displayDate = isToday ? "Aujourd'hui" :
             new Date(dateStr + 'T12:00:00').toLocaleDateString('fr-FR', {
               weekday: 'short', day: 'numeric', month: 'short'
