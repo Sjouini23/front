@@ -245,7 +245,13 @@ if (isTVRoute) {
                   {/* Reservations Widget — shows only when there are pending reservations */}
                   <ReservationsWidget 
                     theme={theme}
-                    onGoToServices={() => setActiveTab('services')}
+                    onStartService={(prefilled) => {
+                      serviceData.setEditingService(null);
+                      // Pre-fill the form
+                      serviceData.setShowServiceForm(true);
+                      // Store prefilled data temporarily
+                      window.__reservationPrefill = prefilled;
+                    }}
                   />
                   {/* AI Assistant */}
                   <PersonalAIAssistant 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Car, Phone, CheckCircle, X } from 'lucide-react';
+import { Calendar, Clock, Car, Phone, CheckCircle, X, Play } from 'lucide-react';
 import { LUXURY_THEMES_2025 } from '../../utils/luxuryThemes';
 import config from '../../config.local';
 
@@ -10,11 +10,10 @@ const SERVICE_NAMES = {
   'complet-premium': 'Complet Premium'
 };
 
-const ReservationsWidget = ({ theme, onGoToServices }) => {
+const ReservationsWidget = ({ theme, onStartService }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const today = new Date().toISOString().split('T')[0];
 
   const fetchReservations = async () => {
@@ -25,13 +24,13 @@ const ReservationsWidget = ({ theme, onGoToServices }) => {
       });
       if (res.ok) {
         const data = await res.json();
-        // Show today + upcoming pending/confirmed
         const relevant = data
-          .filter(r => r.status !== 'cancelled' && r.status !== 'completed')
-          .filter(r => r.reservation_date >= today)
+          .filter(r => r.status === 'pending' || r.status === 'confirmed')
+          .filter(r => r.reservation_date.split('T')[0] >= today)
           .sort((a, b) => {
-            if (a.reservation_date !== b.reservation_date)
-              return a.reservation_date.localeCompare(b.reservation_date);
+            const dateA = a.reservation_date.split('T')[0];
+            const dateB = b.reservation_date.split('T')[0];
+            if (dateA !== dateB) return dateA.localeCompare(dateB);
             return a.reservation_time.localeCompare(b.reservation_time);
           })
           .slice(0, 5);
@@ -61,6 +60,22 @@ const ReservationsWidget = ({ theme, onGoToServices }) => {
     }
   };
 
+  const handleStart = async (reservation) => {
+    // Convert reservation to real service
+    await updateStatus(reservation.id, 'completed');
+    // Open service form pre-filled with reservation data
+    if (onStartService) {
+      onStartService({
+        licensePlate: reservation.license_plate,
+        vehicleType: reservation.vehicle_type,
+        serviceType: reservation.service_type,
+        phone: reservation.customer_phone,
+        notes: `Réservation ${reservation.confirmation_code} — ${reservation.customer_name}`,
+        date: new Date().toISOString().split('T')[0]
+      });
+    }
+  };
+
   useEffect(() => {
     fetchReservations();
     // Refresh every 2 minutes
@@ -68,12 +83,10 @@ const ReservationsWidget = ({ theme, onGoToServices }) => {
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) return null;
-  if (reservations.length === 0) return null;
+  if (loading || reservations.length === 0) return null;
 
   return (
-    <div className={`${currentTheme.surface} rounded-2xl p-5 shadow-xl border ${currentTheme.border}`}>
-      
+    <div className={`${currentTheme.surface} rounded-2xl p-5 shadow-xl border border-blue-500/30`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
@@ -82,36 +95,37 @@ const ReservationsWidget = ({ theme, onGoToServices }) => {
           </div>
           <div>
             <h3 className={`font-bold ${currentTheme.text}`}>
-              Réservations en attente
+              Réservations
             </h3>
             <p className={`text-xs ${currentTheme.textSecondary}`}>
-              {reservations.length} réservation(s)
+              {reservations.length} en attente
             </p>
           </div>
         </div>
-        <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+          <span className="text-xs text-blue-500 font-bold">LIVE</span>
+        </div>
       </div>
-
-      {/* Reservations list */}
+      {/* List */}
       <div className="space-y-3">
         {reservations.map(r => {
-          const isToday = r.reservation_date.split('T')[0] === today;
+          const dateStr = r.reservation_date.split('T')[0];
+          const isToday = dateStr === today;
           const displayDate = isToday ? "Aujourd'hui" :
-            new Date(r.reservation_date).toLocaleDateString('fr-FR', {
-              day: 'numeric', month: 'short'
+            new Date(dateStr + 'T12:00:00').toLocaleDateString('fr-FR', {
+              weekday: 'short', day: 'numeric', month: 'short'
             });
 
           return (
             <div key={r.id} className={`${currentTheme.glass} rounded-xl p-4 border ${
               isToday ? 'border-blue-500/50' : currentTheme.border
             }`}>
-              {/* Top row */}
+              {/* Header row */}
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-2">
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                    isToday
-                      ? 'bg-blue-500/20 text-blue-600'
-                      : 'bg-gray-500/20 text-gray-500'
+                    isToday ? 'bg-blue-500/20 text-blue-600' : 'bg-gray-500/20 text-gray-500'
                   }`}>
                     {displayDate}
                   </span>
@@ -122,19 +136,19 @@ const ReservationsWidget = ({ theme, onGoToServices }) => {
                     </span>
                   </div>
                 </div>
-                <span className="text-xs font-mono font-bold text-blue-600">
+                <span className="text-xs font-mono font-bold text-blue-500">
                   {r.confirmation_code}
                 </span>
               </div>
 
               {/* Details */}
-              <div className="flex items-center space-x-3 mb-3">
-                <Car size={14} className={currentTheme.textSecondary} />
+              <div className="flex items-center space-x-2 mb-1">
+                <Car size={13} className={currentTheme.textSecondary} />
                 <span className={`text-sm font-bold ${currentTheme.text}`}>
                   {r.license_plate}
                 </span>
                 <span className={`text-xs ${currentTheme.textSecondary}`}>
-                  {SERVICE_NAMES[r.service_type] || r.service_type}
+                  • {SERVICE_NAMES[r.service_type] || r.service_type}
                 </span>
               </div>
 
@@ -147,9 +161,18 @@ const ReservationsWidget = ({ theme, onGoToServices }) => {
 
               {/* Actions */}
               <div className="flex space-x-2">
+                {isToday && (
+                  <button
+                    onClick={() => handleStart(r)}
+                    className="flex-1 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-xs flex items-center justify-center space-x-1 active:scale-95 transition-all shadow-md"
+                  >
+                    <Play size={12} />
+                    <span>Démarrer</span>
+                  </button>
+                )}
                 <button
                   onClick={() => updateStatus(r.id, 'confirmed')}
-                  className="flex-1 py-2 rounded-lg bg-green-500/20 text-green-600 font-bold text-xs flex items-center justify-center space-x-1 hover:bg-green-500/30 transition-all active:scale-95"
+                  className="flex-1 py-2 rounded-lg bg-blue-500/20 text-blue-600 font-bold text-xs flex items-center justify-center space-x-1 hover:bg-blue-500/30 transition-all active:scale-95"
                 >
                   <CheckCircle size={12} />
                   <span>Confirmer</span>

@@ -56,9 +56,7 @@ export const useServices = (addNotification) => {
       // ✅ USE YOUR SAFE TRANSFORMER - this works!
       const transformedServices = transformBackendResponse(backendServices);
 
-      // Fetch and merge reservations
-      const reservationServices = await fetchReservations();
-      setServices([...reservationServices, ...transformedServices]);
+      setServices(transformedServices);
       
       if (transformedServices.length > 0) {
         addNotification('✅ Données Synchronisées', `${transformedServices.length} services chargés`, 'success');
@@ -72,49 +70,6 @@ export const useServices = (addNotification) => {
       setLoading(false);
     }
   }, []); // ✅ FIXED: Remove addNotification from dependencies
-
-  // ✅ NEW: Fetch reservations and convert to service format
-  const fetchReservations = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) return [];
-      
-      const response = await fetch(`${config.API_ENDPOINTS.WASHES.replace('/washes', '/reservations')}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (!response.ok) return [];
-      
-      const reservations = await response.json();
-      
-      // Convert reservations to service format
-      return reservations
-        .filter(r => r.status === 'pending' || r.status === 'confirmed')
-        .map(r => ({
-          id: `res-${r.id}`,
-          reservationId: r.id,
-          licensePlate: r.license_plate,
-          serviceType: r.service_type,
-          vehicleType: r.vehicle_type,
-          totalPrice: 0,
-          date: r.reservation_date,
-          staff: [],
-          isReservation: true,
-          confirmationCode: r.confirmation_code,
-          customerName: r.customer_name,
-          phone: r.customer_phone,
-          notes: `📅 Réservation ${r.confirmation_code} — ${r.customer_name} — ${r.reservation_time}`,
-          isActive: false,
-          timeStarted: null,
-          timeFinished: null,
-          status: r.status,
-          reservationTime: r.reservation_time
-        }));
-    } catch (error) {
-      console.warn('Failed to fetch reservations:', error);
-      return [];
-    }
-  }, []);
 
   useEffect(() => {
     fetchServices();

@@ -82,26 +82,52 @@ const AppleLuxuryServiceForm = React.memo(({
   const [showTaxiMode, setShowTaxiMode] = useState(false);
   const [plateSuggestions, setPlateSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [formData, setFormData] = useState(() => existingService || {
-    licensePlate: '',
-    plateType: 'tunisienne',
-    vehicleType: 'voiture',
-    vehicleBrand: '',
-    vehicleModel: '',
-    vehicleColor: '',
-    serviceType: 'lavage-ville', // Default to most common service
-    staff: [],
-    date: getCurrentDateString(),
-    phone: '',
-    notes: '',
-    photos: [],
-    priceAdjustment: 0, // ADD PRICE ADJUSTMENT FIELD
-    // NEW TIMER FIELDS
-    timeStarted: null,
-    timeFinished: null,
-    totalDuration: 0,
-    staffDurations: {}, // Track individual staff time
-    isActive: false
+  const [formData, setFormData] = useState(() => {
+    // Check for reservation prefill
+    const prefill = window.__reservationPrefill;
+    if (prefill && !existingService) {
+      window.__reservationPrefill = null; // clear it
+      return {
+        licensePlate: prefill.licensePlate || '',
+        plateType: 'tunisienne',
+        vehicleType: prefill.vehicleType || 'voiture',
+        vehicleBrand: '',
+        vehicleModel: '',
+        vehicleColor: '',
+        serviceType: prefill.serviceType || 'lavage-ville',
+        staff: [],
+        date: prefill.date || getCurrentDateString(),
+        phone: prefill.phone || '',
+        notes: prefill.notes || '',
+        photos: [],
+        priceAdjustment: 0,
+        timeStarted: null,
+        timeFinished: null,
+        totalDuration: 0,
+        staffDurations: {},
+        isActive: false
+      };
+    }
+    return existingService || {
+      licensePlate: '',
+      plateType: 'tunisienne',
+      vehicleType: 'voiture',
+      vehicleBrand: '',
+      vehicleModel: '',
+      vehicleColor: '',
+      serviceType: 'lavage-ville',
+      staff: [],
+      date: getCurrentDateString(),
+      phone: '',
+      notes: '',
+      photos: [],
+      priceAdjustment: 0,
+      timeStarted: null,
+      timeFinished: null,
+      totalDuration: 0,
+      staffDurations: {},
+      isActive: false
+    };
   });
   
   const [validationErrors, setValidationErrors] = useState({});
