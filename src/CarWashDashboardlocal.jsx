@@ -242,10 +242,6 @@ if (isTVRoute) {
             {activeTab === 'dashboard' && (
               <div className="space-y-4">
                 <div className="w-full max-w-screen-xl mx-auto px-4 sm:px-6 space-y-4">
-                  {/* TEST - DELETE AFTER */}
-                  <div style={{background: 'red', color: 'white', padding: '20px', fontSize: '24px'}}>
-                    TEST - NEW CODE IS RUNNING
-                  </div>
                   {/* Reservations Widget — shows only when there are pending reservations */}
                   <ReservationsWidget 
                     theme={theme}
