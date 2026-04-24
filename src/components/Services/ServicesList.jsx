@@ -46,7 +46,7 @@ const ServicesList = ({
   const completedServices = safeFiltered.filter(s =>
     s.timeFinished || isDateBeforeToday(s.date)
   ).length;
-  const totalRevenue = safeFiltered.reduce((sum, s) => sum + (s.totalPrice || 0), 0);
+  const totalRevenue = safeServices.reduce((sum, s) => sum + (s.totalPrice || 0), 0);
 
   const fetchReservations = async () => {
     try {
