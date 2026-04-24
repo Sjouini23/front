@@ -195,7 +195,7 @@ const SettingsMain = ({
       name: 'Lavage Ville',
       description: 'Intérieur complet + Extérieur standard',
       duration: calculateServiceDuration('lavage-ville'),
-      basePrice: 25
+      basePrice: 15
     },
     'interieur': {
       icon: <Users size={24} className="text-green-500" />,
@@ -216,7 +216,7 @@ const SettingsMain = ({
       name: 'Complet Premium',
       description: 'Service complet haut de gamme',
       duration: calculateServiceDuration('complet-premium'),
-      basePrice: 45
+      basePrice: 60
     }
   };
 
