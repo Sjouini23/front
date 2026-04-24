@@ -1254,7 +1254,15 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury', staffMembers = {} }
   // Safe localStorage operations
   useEffect(() => {
     try {
-      localStorage.setItem('jouini_ai_messages_enhanced', JSON.stringify(messages));
+      const lightweight = messages.slice(-20).map(m => ({
+        id: m.id,
+        type: m.type,
+        content: m.content,
+        timestamp: m.timestamp,
+        suggestions: m.suggestions
+        // drop: cards, analysis, hasAnalysis — these are rebuilt from live data anyway
+      }));
+      localStorage.setItem('jouini_ai_messages_enhanced', JSON.stringify(lightweight));
     } catch (error) {
       console.warn('Failed to save messages:', error);
     }
@@ -1262,7 +1270,13 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury', staffMembers = {} }
 
   useEffect(() => {
     try {
-      localStorage.setItem('jouini_ai_memory_enhanced', JSON.stringify(conversationMemory));
+      const lightweight = conversationMemory ? Object.keys(conversationMemory).reduce((acc, key) => {
+        acc[key] = Array.isArray(conversationMemory[key]) 
+          ? conversationMemory[key].slice(-20)
+          : conversationMemory[key];
+        return acc;
+      }, {}) : {};
+      localStorage.setItem('jouini_ai_memory_enhanced', JSON.stringify(lightweight));
     } catch (error) {
       console.warn('Failed to save memory:', error);
     }
