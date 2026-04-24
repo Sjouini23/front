@@ -734,7 +734,7 @@ const StaffCard = ({ data, theme }) => {
         </div>
         
         <div className="text-center p-2 rounded-md bg-white/5">
-          <div className="text-sm font-bold text-indigo-600">{data.avgTime || '25'}min</div>
+          <div className="text-sm font-bold text-indigo-600">{data.avgTime ? `${data.avgTime} min` : 'N/A'}</div>
           <div className="text-xs text-indigo-700">Temps Moyen</div>
         </div>
       </div>
@@ -1503,6 +1503,7 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury', staffMembers = {} }
             const actualEfficiency = globalStaffServices.length > 0 ? 
               Math.min(100, Math.round((totalRevenue / globalStaffServices.length / 30) * 100)) : 0;
 
+            const completedWithTime = staffServices.filter(s => s.totalDuration > 0);
             analysis.staff[staffKey] = {
               name: staffInfo?.name || staffKey,
               revenue: Math.round(totalRevenue),
@@ -1510,7 +1511,12 @@ const SmartAIAssistant = ({ services = [], theme = 'luxury', staffMembers = {} }
               average: staffServices.length > 0 ? Math.round(totalRevenue / staffServices.length) : 0,
               efficiency: actualEfficiency,
               isTopPerformer: false,
-              avgTime: 25 + Math.floor(Math.random() * 10) - 5,
+              avgTime: completedWithTime.length > 0
+                ? Math.round(
+                    completedWithTime.reduce((sum, s) => sum + s.totalDuration, 0) 
+                    / completedWithTime.length / 60
+                  )
+                : null,
               specialization: staffInfo?.specialization || []
             };
           } catch (staffError) {
