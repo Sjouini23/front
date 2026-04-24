@@ -64,8 +64,9 @@ export const useServices = (addNotification) => {
 
     } catch (error) {
       console.error('❌ Error fetching services:', error);
-      addNotification('❌ Erreur de Synchronisation', error.message, 'error');
+      addNotification('❌ Erreur', 'Reconnexion...', 'warning');
       setServices([]);
+      setTimeout(() => fetchServices(), 2000);
     } finally {
       setLoading(false);
     }
