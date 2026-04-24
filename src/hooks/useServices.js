@@ -389,7 +389,7 @@ const finishService = useCallback(async (serviceId) => {
 // ✅ CLEAN RETURN STATEMENT
 return {
   // Data
-  services: filteredServices,
+  services: services,
   filteredServices: filteredServices,
   serviceConfig,
   loading,
