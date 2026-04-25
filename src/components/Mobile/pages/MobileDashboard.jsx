@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Car, DollarSign, Clock, TrendingUp, Plus } from 'lucide-react';
 import { LUXURY_THEMES_2025 } from '../../../utils/luxuryThemes';
-import { isDateBeforeToday } from '../../../utils/dateUtils';
+import { isDateBeforeToday, getCurrentDateString } from '../../../utils/dateUtils';
 import config from '../../../config.local';
 
 const MobileDashboard = ({ services, theme, onNewService, staffMembers = {}, onStartReservation }) => {
   const currentTheme = LUXURY_THEMES_2025[theme];
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCurrentDateString();
   const [reservations, setReservations] = useState([]);
 
   useEffect(() => {
@@ -65,7 +65,7 @@ const MobileDashboard = ({ services, theme, onNewService, staffMembers = {}, onS
             </div>
             {reservations.map(r => {
               const dateStr = r.reservation_date.split('T')[0];
-              const todayStr = new Date().toISOString().split('T')[0];
+              const todayStr = getCurrentDateString();
               const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
               const isToday = dateStr === todayStr || dateStr === yesterday;
               return (
